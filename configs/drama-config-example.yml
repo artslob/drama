@@ -1,3 +1,7 @@
 client_id: "id"
 client_secret: "secret"
-user_agent: "<platform>:<app ID>:<version string> (by /u/<reddit username>)"
+user_agent:
+  platform: linux
+  app_id: drama
+  version: 0.1.0
+  reddit_username: reddit_bot_username
