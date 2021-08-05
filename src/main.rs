@@ -1,4 +1,5 @@
 use std::fmt::{Display, Formatter};
+use std::path::Path;
 
 use serde::Deserialize;
 
@@ -7,6 +8,22 @@ struct Config {
     client_id: String,
     client_secret: String,
     user_agent: UserAgent,
+}
+
+impl Config {
+    fn from_env() -> crate::Result<Self> {
+        let env = "DRAMA_CONFIG_FILE";
+        let path = std::env::var_os(env).ok_or(format!(
+            "Could not parse config, env variable '{}' not set",
+            env
+        ))?;
+        Self::from_file(path)
+    }
+
+    fn from_file<P: AsRef<Path>>(path: P) -> crate::Result<Self> {
+        let config_file = std::fs::File::open(path)?;
+        Ok(serde_yaml::from_reader(config_file)?)
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -43,10 +60,7 @@ type Error = Box<dyn std::error::Error + Sync + Send>;
 type Result<T> = std::result::Result<T, Error>;
 
 fn main() -> crate::Result<()> {
-    // TODO accept config path as env variable
-    let config_path = "configs/drama-config.yml";
-    let config_file = std::fs::File::open(config_path)?;
-    let config: Config = serde_yaml::from_reader(config_file)?;
+    let config = Config::from_env()?;
 
     println!("{:#?}", config);
     println!("{}", config.user_agent);
