@@ -10,3 +10,4 @@ repository = "https://github.com/artslob/drama"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.8"
 reqwest = { version = "0.11", features = ["blocking", "json"] }
+serde_json = "1.0"
