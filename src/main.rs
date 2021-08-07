@@ -67,5 +67,19 @@ fn main() -> crate::Result<()> {
     // println!("{}", serde_json::to_string_pretty(&j)?);
     println!("{:#?}", j);
 
+    let subreddit_url = format!(
+        "https://oauth.reddit.com/user/{}/about",
+        config.user_agent.reddit_username
+    );
+    let r = client
+        .get(subreddit_url)
+        .header("user-agent", config.user_agent.to_string())
+        .header("authorization", format!("bearer {}", &token.access_token))
+        .send()?
+        .error_for_status()?;
+
+    let j: serde_json::Value = r.json()?;
+    println!("{}", serde_json::to_string_pretty(&j)?);
+
     Ok(())
 }
