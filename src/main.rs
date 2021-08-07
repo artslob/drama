@@ -11,6 +11,25 @@ struct Token {
     scope: String,
 }
 
+#[derive(serde::Deserialize, Debug)]
+struct Subreddit {
+    display_name: String,
+    header_title: String,
+    id: String,
+    name: String,
+    public_description: String,
+    subreddit_type: String,
+    subscribers: i32,
+    title: String,
+    url: String,
+}
+
+#[derive(serde::Deserialize, Debug)]
+struct Data<T> {
+    data: T,
+    kind: String,
+}
+
 fn main() -> crate::Result<()> {
     let config = config::Config::from_env()?;
 
@@ -43,8 +62,10 @@ fn main() -> crate::Result<()> {
 
     println!("{}", r.status());
 
-    let j: serde_json::Value = r.json()?;
-    println!("{}", serde_json::to_string_pretty(&j)?);
+    // let j: serde_json::Value = r.json()?;
+    let j: Data<Subreddit> = r.json()?;
+    // println!("{}", serde_json::to_string_pretty(&j)?);
+    println!("{:#?}", j);
 
     Ok(())
 }
