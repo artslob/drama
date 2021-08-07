@@ -1,4 +1,5 @@
 mod config;
+mod reddit;
 
 type Error = Box<dyn std::error::Error + Sync + Send>;
 type Result<T> = std::result::Result<T, Error>;
@@ -36,50 +37,14 @@ fn main() -> crate::Result<()> {
     println!("{:#?}", config);
     println!("{}", config.user_agent);
 
-    let client = reqwest::blocking::Client::new();
+    let client = reddit::Reddit::new(&config)?;
 
-    let token_url = "https://www.reddit.com/api/v1/access_token";
-    let r = client
-        .post(token_url)
-        .header("user-agent", config.user_agent.to_string())
-        .basic_auth(config.client_id, Some(config.client_secret))
-        .body("grant_type=client_credentials")
-        .send()?
-        .error_for_status()?;
-    println!("{}", r.status());
-    // println!("{}", r.clone().text()?);
+    let json: Data<Subreddit> = client.get("r/redditdev/about")?.json()?;
+    println!("{:#?}", json);
 
-    let token: Token = r.json()?;
-    println!("{:?}", token);
-
-    let subreddit_url = "https://oauth.reddit.com/r/redditdev/about";
-    let r = client
-        .get(subreddit_url)
-        .header("user-agent", config.user_agent.to_string())
-        .header("authorization", format!("bearer {}", &token.access_token))
-        .send()?
-        .error_for_status()?;
-
-    println!("{}", r.status());
-
-    // let j: serde_json::Value = r.json()?;
-    let j: Data<Subreddit> = r.json()?;
-    // println!("{}", serde_json::to_string_pretty(&j)?);
-    println!("{:#?}", j);
-
-    let subreddit_url = format!(
-        "https://oauth.reddit.com/user/{}/about",
-        config.user_agent.reddit_username
-    );
-    let r = client
-        .get(subreddit_url)
-        .header("user-agent", config.user_agent.to_string())
-        .header("authorization", format!("bearer {}", &token.access_token))
-        .send()?
-        .error_for_status()?;
-
-    let j: serde_json::Value = r.json()?;
-    println!("{}", serde_json::to_string_pretty(&j)?);
+    let tail = format!("user/{}/about", config.user_agent.reddit_username);
+    let json: serde_json::Value = client.get(&tail)?.json()?;
+    println!("{}", serde_json::to_string_pretty(&json)?);
 
     Ok(())
 }
