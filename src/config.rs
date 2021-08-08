@@ -49,11 +49,11 @@ impl Display for UserAgent {
         };
         write!(
             f,
-            "{}:{}:{} (by /u/{})",
-            self.platform.as_ref().unwrap_or(&os.into()),
-            self.app_id.as_ref().unwrap_or(&app_id.into()),
-            self.version.as_ref().unwrap_or(&version.into()),
-            self.reddit_username
+            "{platform}:{id}:{version} (by /u/{username})",
+            platform = self.platform.as_ref().unwrap_or(&os.into()),
+            id = self.app_id.as_ref().unwrap_or(&app_id.into()),
+            version = self.version.as_ref().unwrap_or(&version.into()),
+            username = self.reddit_username
         )
     }
 }
