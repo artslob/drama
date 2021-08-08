@@ -6,3 +6,5 @@ user_agent:
   app_id:
   version:
   reddit_username: artslob-api-user
+access_token_url: "https://www.reddit.com/api/v1/access_token"
+api_base_url: "https://oauth.reddit.com/"

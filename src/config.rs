@@ -8,6 +8,8 @@ pub struct Config {
     pub client_id: String,
     pub client_secret: String,
     pub user_agent: UserAgent,
+    pub access_token_url: String,
+    pub api_base_url: String,
 }
 
 impl Config {
