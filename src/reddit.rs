@@ -1,5 +1,9 @@
+use std::convert::TryInto;
+
+use http::header::AUTHORIZATION;
 use reqwest::blocking::Client as HttpClient;
 use reqwest::blocking::Response;
+use reqwest::header::HeaderMap;
 
 #[derive(serde::Deserialize, Debug)]
 struct Token {
@@ -11,46 +15,40 @@ struct Token {
 
 pub struct Reddit {
     client: HttpClient,
-    token: Token,
-    authorization: String,
-    user_agent: String,
     api_base_url: String,
 }
 
 impl Reddit {
     pub fn new(config: &crate::config::Config) -> crate::Result<Self> {
-        let client = HttpClient::new();
-        let user_agent = config.user_agent.to_string();
-
-        let response = client
+        let token: Token = HttpClient::new()
             .post(&config.access_token_url)
-            .header("user-agent", &user_agent)
             .basic_auth(&config.client_id, Some(&config.client_secret))
             .body("grant_type=client_credentials")
             .send()?
-            .error_for_status()?;
+            .error_for_status()?
+            .json()?;
 
-        let token: Token = response.json()?;
-        let authorization = format!("bearer {}", &token.access_token);
+        let client = HttpClient::builder()
+            .user_agent(config.user_agent.to_string())
+            .default_headers(Self::default_headers(&token)?)
+            .build()?;
 
         Ok(Reddit {
             client,
-            token,
-            authorization,
-            user_agent,
             api_base_url: config.api_base_url.clone(),
         })
     }
 
+    fn default_headers(token: &Token) -> crate::Result<HeaderMap> {
+        let mut default_headers = HeaderMap::new();
+        let bearer = format!("bearer {}", &token.access_token);
+        default_headers.insert(AUTHORIZATION, bearer.try_into()?);
+        Ok(default_headers)
+    }
+
     pub fn get(&self, tail: &str) -> crate::Result<Response> {
         let url = format!("{}/{}", self.api_base_url, tail);
-        let response = self
-            .client
-            .get(url)
-            .header("user-agent", &self.user_agent)
-            .header("authorization", &self.authorization)
-            .send()?
-            .error_for_status()?;
+        let response = self.client.get(url).send()?.error_for_status()?;
         Ok(response)
     }
 }
