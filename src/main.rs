@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::time::Duration;
 
 mod config;
 mod reddit;
@@ -74,11 +75,39 @@ struct Data<T> {
     kind: String,
 }
 
-fn main() -> crate::Result<()> {
+#[tokio::main]
+async fn main() -> crate::Result<()> {
     let config = config::Config::from_env()?;
 
     println!("{:#?}", config);
     println!("{}", config.user_agent);
+
+    let pool = sqlx::postgres::PgPoolOptions::new()
+        .max_connections(5)
+        .connect_timeout(Duration::from_secs(5))
+        .connect("postgres://drama_user:drama_pass@localhost:5932/drama_db")
+        .await?;
+
+    // sqlx::query("DELETE FROM table").execute(&pool).await?;
+
+    // Make a simple query to return the given parameter
+    let row: (i64,) = sqlx::query_as("SELECT $1")
+        .bind(150_i64)
+        .fetch_one(&pool)
+        .await?;
+    assert_eq!(row.0, 150);
+
+    let qwe = sqlx::query!(r#"SELECT * FROM (VALUES ('Hello world')) t1 (col1) WHERE 1 = 1"#,)
+        .fetch_one(&pool)
+        .await?;
+    println!("{:#?}", qwe.col1);
+
+    // let countries = sqlx::query!(
+    //     "SELECT country FROM users WHERE organization = $1",
+    //     organization
+    // )
+    // .fetch_all(&pool) // -> Vec<{ country: String, count: i64 }>
+    // .await?;
 
     let client = reddit::Reddit::new(&config)?;
 
@@ -86,10 +115,10 @@ fn main() -> crate::Result<()> {
     println!("{:#?}", json);
 
     let tail = format!("user/{}/about", config.user_agent.reddit_username);
-    let json: serde_json::Value = client.get(&tail)?.json()?;
+    let _json: serde_json::Value = client.get(&tail)?.json()?;
 
-    let json: Data<Listing<Data<Post>>> = client.get("top")?.json()?;
-    println!("{}", serde_json::to_string_pretty(&json)?);
+    let _json: Data<Listing<Data<Post>>> = client.get("top")?.json()?;
+    // println!("{}", serde_json::to_string_pretty(&json)?);
 
     Ok(())
 }

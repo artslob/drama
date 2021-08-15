@@ -12,3 +12,6 @@ serde_yaml = "0.8"
 serde_json = "1.0"
 reqwest = { version = "0.11", features = ["blocking", "json"] }
 http = "0.2"
+sqlx = { version = "0.4.1", features = [ "runtime-tokio-native-tls", "postgres" ] }
+#async-std = { version = "1.6", features = [ "attributes" ] }
+tokio = { version = "0.2.25", features = ["full"] }
