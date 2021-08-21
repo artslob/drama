@@ -1,12 +1,18 @@
+#[macro_use]
+extern crate diesel;
+
+use diesel::pg::PgConnection;
+use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
 mod config;
 mod reddit;
+mod schema;
 
 type Error = Box<dyn std::error::Error + Sync + Send>;
 type Result<T> = std::result::Result<T, Error>;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, diesel::Queryable)]
 struct Subreddit {
     display_name: String,
     header_title: String,
@@ -28,7 +34,6 @@ struct Post {
     author_premium: bool,
     created_utc: f32,
     downs: i32,
-    edited: bool,
     gilded: i32,
     hidden: bool,
     hide_score: bool,
@@ -82,14 +87,21 @@ fn main() -> crate::Result<()> {
 
     let client = reddit::Reddit::new(&config)?;
 
-    let json: Data<Subreddit> = client.get("r/redditdev/about")?.json()?;
-    println!("{:#?}", json);
+    let about_redditdev: Data<Subreddit> = client.get("r/redditdev/about")?.json()?;
+    println!("{:#?}", about_redditdev);
 
     let tail = format!("user/{}/about", config.user_agent.reddit_username);
-    let json: serde_json::Value = client.get(&tail)?.json()?;
+    let _about_me: serde_json::Value = client.get(&tail)?.json()?;
 
-    let json: Data<Listing<Data<Post>>> = client.get("top")?.json()?;
-    println!("{}", serde_json::to_string_pretty(&json)?);
+    let posts: Data<Listing<Data<Post>>> = client.get("top")?.json()?;
+    println!("{}", serde_json::to_string_pretty(&posts)?);
+
+    let con = PgConnection::establish("postgres://drama_user:drama_pass@localhost:5932/drama_db")?;
+
+    use schema::subreddit::dsl::*;
+
+    let results = subreddit.limit(10).load::<Subreddit>(&con)?;
+    println!("{:#?}", results);
 
     Ok(())
 }
