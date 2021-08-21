@@ -1,3 +1,4 @@
 /target
 /.idea
 /configs/drama-config.yml
+/.env
