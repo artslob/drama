@@ -5,6 +5,8 @@ use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
+use schema::subreddit;
+
 mod config;
 mod reddit;
 mod schema;
@@ -12,7 +14,8 @@ mod schema;
 type Error = Box<dyn std::error::Error + Sync + Send>;
 type Result<T> = std::result::Result<T, Error>;
 
-#[derive(Serialize, Deserialize, Debug, diesel::Queryable)]
+#[derive(Serialize, Deserialize, Debug, diesel::Queryable, diesel::Insertable)]
+#[table_name = "subreddit"]
 struct Subreddit {
     display_name: String,
     header_title: String,
@@ -96,9 +99,23 @@ fn main() -> crate::Result<()> {
     let posts: Data<Listing<Data<Post>>> = client.get("top")?.json()?;
     println!("{}", serde_json::to_string_pretty(&posts)?);
 
+    let subreddits: Data<Listing<Data<Subreddit>>> = client.get("subreddits/new")?.json()?;
+    println!("{}", serde_json::to_string_pretty(&subreddits)?);
+
+    let subreddits: Vec<Subreddit> = subreddits
+        .data
+        .children
+        .into_iter()
+        .map(|x| x.data)
+        .collect();
+
     let con = PgConnection::establish("postgres://drama_user:drama_pass@localhost:5932/drama_db")?;
 
     use schema::subreddit::dsl::*;
+
+    diesel::insert_into(schema::subreddit::table)
+        .values(subreddits)
+        .execute(&con)?;
 
     let results = subreddit.limit(10).load::<Subreddit>(&con)?;
     println!("{:#?}", results);
