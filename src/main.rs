@@ -102,13 +102,6 @@ async fn main() -> crate::Result<()> {
         .await?;
     println!("{:#?}", qwe.col1);
 
-    // let countries = sqlx::query!(
-    //     "SELECT country FROM users WHERE organization = $1",
-    //     organization
-    // )
-    // .fetch_all(&pool) // -> Vec<{ country: String, count: i64 }>
-    // .await?;
-
     let client = reddit::Reddit::new(&config)?;
 
     let json: Data<Subreddit> = client.get("r/redditdev/about")?.json()?;
@@ -119,6 +112,33 @@ async fn main() -> crate::Result<()> {
 
     let _json: Data<Listing<Data<Post>>> = client.get("top")?.json()?;
     // println!("{}", serde_json::to_string_pretty(&json)?);
+
+    let subreddits: Data<Listing<Data<Subreddit>>> = client.get("subreddits/new")?.json()?;
+    println!("{}", serde_json::to_string_pretty(&subreddits)?);
+
+    sqlx::query!(
+        r#"INSERT INTO subreddit (display_name,
+header_title,
+id,
+name,
+public_description,
+subreddit_type,
+subscribers,
+title,
+url
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);"#,
+        subreddits.data.children[0].data.display_name,
+        subreddits.data.children[0].data.header_title,
+        subreddits.data.children[0].data.id,
+        subreddits.data.children[0].data.name,
+        subreddits.data.children[0].data.public_description,
+        subreddits.data.children[0].data.subreddit_type,
+        subreddits.data.children[0].data.subscribers,
+        subreddits.data.children[0].data.title,
+        subreddits.data.children[0].data.url,
+    )
+    .execute(&pool)
+    .await?;
 
     Ok(())
 }

@@ -47,7 +47,11 @@ impl Reddit {
     }
 
     pub fn get(&self, tail: &str) -> crate::Result<Response> {
-        let url = format!("{}/{}", self.api_base_url, tail);
+        let url = format!(
+            "{}/{}",
+            self.api_base_url.trim_end_matches('/'),
+            tail.trim_end_matches('/')
+        );
         let response = self.client.get(url).send()?.error_for_status()?;
         Ok(response)
     }
