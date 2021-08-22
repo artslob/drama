@@ -115,6 +115,7 @@ fn main() -> crate::Result<()> {
 
     diesel::insert_into(schema::subreddit::table)
         .values(subreddits)
+        .on_conflict_do_nothing()
         .execute(&con)?;
 
     let results = subreddit.limit(10).load::<Subreddit>(&con)?;
