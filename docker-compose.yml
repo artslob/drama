@@ -10,3 +10,9 @@ services:
       POSTGRES_USER: "drama_user"
       POSTGRES_PASSWORD: "drama_pass"
     restart: on-failure
+
+  rabbit:
+    image: rabbitmq:3.9.5
+    ports:
+      - "5672:5672"
+      - "15672:15672"

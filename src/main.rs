@@ -86,7 +86,7 @@ fn main() -> crate::Result<()> {
     println!("{:#?}", json);
 
     let tail = format!("user/{}/about", config.user_agent.reddit_username);
-    let json: serde_json::Value = client.get(&tail)?.json()?;
+    let _about_user: serde_json::Value = client.get(&tail)?.json()?;
 
     let json: Data<Listing<Data<Post>>> = client.get("top")?.json()?;
     println!("{}", serde_json::to_string_pretty(&json)?);
