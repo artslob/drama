@@ -47,7 +47,7 @@ async fn main() -> Result<()> {
             .await?
             .await?;
         assert_eq!(confirm, Confirmation::NotRequested);
-        tokio::time::sleep(Duration::from_secs(1)).await;
         println!("sent {}", payload);
+        tokio::time::sleep(Duration::from_secs(1)).await;
     }
 }
