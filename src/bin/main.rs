@@ -1,10 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-mod config;
-mod reddit;
-
-type Error = Box<dyn std::error::Error + Sync + Send>;
-type Result<T> = std::result::Result<T, Error>;
+use drama::config;
+use drama::reddit;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Subreddit {
@@ -74,7 +71,7 @@ struct Data<T> {
     kind: String,
 }
 
-fn main() -> crate::Result<()> {
+fn main() -> drama::Result<()> {
     let config = config::Config::from_env()?;
 
     println!("{:#?}", config);
