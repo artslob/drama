@@ -292,6 +292,7 @@ dependencies = [
  "http",
  "lapin",
  "log",
+ "rand",
  "reqwest",
  "serde",
  "serde_json",

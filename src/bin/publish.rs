@@ -5,6 +5,7 @@ use lapin::{
     ConnectionProperties, Result,
 };
 use log::info;
+use rand::Rng;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -22,11 +23,15 @@ async fn main() -> Result<()> {
     .await?;
 
     let channel = conn.create_channel().await?;
+    channel.basic_qos(1, BasicQosOptions::default()).await?;
 
     let queue = channel
         .queue_declare(
             "hello",
-            QueueDeclareOptions::default(),
+            QueueDeclareOptions {
+                durable: true,
+                ..Default::default()
+            },
             FieldTable::default(),
         )
         .await?;
@@ -34,15 +39,17 @@ async fn main() -> Result<()> {
     info!("Declared queue {:?}", queue);
 
     loop {
+        let complexity = rand::thread_rng().gen_range(0..10);
+        let complexity = "#".repeat(complexity);
         let now = chrono::Local::now().to_string();
-        let payload = format!("message constructed at {}", now);
+        let payload = format!("msg compl {} {}", complexity, now);
         let confirm = channel
             .basic_publish(
                 "",
                 "hello",
                 BasicPublishOptions::default(),
                 payload.clone().into_bytes(),
-                BasicProperties::default(),
+                BasicProperties::default().with_delivery_mode(2),
             )
             .await?
             .await?;

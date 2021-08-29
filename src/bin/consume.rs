@@ -22,7 +22,10 @@ async fn main() -> Result<()> {
     let queue = channel
         .queue_declare(
             "hello",
-            QueueDeclareOptions::default(),
+            QueueDeclareOptions {
+                durable: true,
+                ..Default::default()
+            },
             FieldTable::default(),
         )
         .await?;
@@ -43,7 +46,9 @@ async fn main() -> Result<()> {
         let (_, delivery) = delivery.expect("error in consumer");
         match std::str::from_utf8(&delivery.data) {
             Ok(s) => {
-                info!("got string {}", s)
+                info!("msg: {}", s);
+                let secs = s.matches('#').count();
+                tokio::time::sleep(std::time::Duration::from_secs(secs as u64)).await;
             }
             Err(e) => {
                 info!("error! {}", e)
