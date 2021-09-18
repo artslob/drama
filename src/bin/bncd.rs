@@ -32,13 +32,15 @@ enum Task {
 
 #[tokio::main]
 async fn main() -> drama::Result<()> {
-    let e = Task::UpdateSubredditInfo {
+    let task = Task::UpdateSubredditInfo {
         common: TaskCommon::new(),
-        subreddit_id: "".to_string(),
+        subreddit_id: "123".to_string(),
     };
-    println!("{:?}", e);
-    let q = bincode::serialize(&e)?;
-    println!("{:?}", q);
-    println!("{}", q.len());
+    println!("{:?}", task);
+    let bytes = bincode::serialize(&task)?;
+    println!("{:?}", bytes);
+    println!("{}", bytes.len());
+    let decoded: Task = bincode::deserialize(&bytes)?;
+    println!("{:?}", decoded);
     Ok(())
 }
