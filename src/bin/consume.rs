@@ -46,9 +46,12 @@ async fn main() -> Result<()> {
         let (_, delivery) = delivery.expect("error in consumer");
         match std::str::from_utf8(&delivery.data) {
             Ok(s) => {
-                info!("msg: {}", s);
-                let secs = s.matches('#').count();
-                tokio::time::sleep(std::time::Duration::from_secs(secs as u64)).await;
+                let s = s.to_string();
+                tokio::spawn(async move {
+                    let secs = s.matches('#').count();
+                    tokio::time::sleep(std::time::Duration::from_secs(secs as u64)).await;
+                    info!("msg waited {}: {}", secs, s);
+                });
             }
             Err(e) => {
                 info!("error! {}", e)

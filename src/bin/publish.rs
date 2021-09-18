@@ -42,7 +42,7 @@ async fn main() -> Result<()> {
         let complexity = rand::thread_rng().gen_range(0..10);
         let complexity = "#".repeat(complexity);
         let now = chrono::Local::now().to_string();
-        let payload = format!("msg compl {} {}", complexity, now);
+        let payload = format!("msg {} compl {}", now, complexity);
         let confirm = channel
             .basic_publish(
                 "",
