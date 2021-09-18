@@ -1,12 +1,13 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct TaskCommon {
     uid: Uuid,
+    created_at: DateTime<Utc>,
     // can be added:
     // user info
-    // creation time
     // app version
 }
 
@@ -14,6 +15,7 @@ impl TaskCommon {
     fn new() -> Self {
         Self {
             uid: Uuid::new_v4(),
+            created_at: Utc::now(),
         }
     }
 }
