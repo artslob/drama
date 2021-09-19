@@ -3,7 +3,7 @@ use std::path::Path;
 
 use serde::Deserialize;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Config {
     pub client_id: String,
     pub client_secret: String,
@@ -28,7 +28,7 @@ impl Config {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct UserAgent {
     pub platform: Option<String>,
     pub app_id: Option<String>,
