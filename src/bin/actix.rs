@@ -24,14 +24,8 @@ async fn start(config: aw::web::Data<drama::config::Config>) -> aw::HttpResponse
 }
 
 #[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    let config = match drama::config::Config::from_env() {
-        Ok(config) => config,
-        Err(_) => {
-            let err = std::io::Error::new(std::io::ErrorKind::Other, "could not read config");
-            return Err(err);
-        }
-    };
+async fn main() -> drama::Result<()> {
+    let config = drama::config::Config::from_env()?;
     let factory = move || {
         aw::App::new()
             .app_data(aw::web::Data::new(config.clone()))
@@ -41,4 +35,5 @@ async fn main() -> std::io::Result<()> {
         .bind("127.0.0.1:9999")?
         .run()
         .await
+        .map_err(Into::into)
 }
