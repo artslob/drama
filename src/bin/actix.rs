@@ -1,4 +1,5 @@
 use actix_web as aw;
+use reqwest::Client as HttpClient;
 
 #[aw::get("/start")]
 async fn start(config: aw::web::Data<drama::config::Config>) -> aw::HttpResponse {
@@ -29,10 +30,41 @@ struct CallbackParams {
     state: String,
 }
 
+#[derive(serde::Deserialize, Debug)]
+struct Token {
+    access_token: String,
+    refresh_token: String,
+    token_type: String,
+    expires_in: i32,
+    scope: String,
+}
+
 #[aw::get("/callback")]
-async fn callback(params: aw::web::Query<CallbackParams>) -> impl aw::Responder {
+async fn callback(
+    params: aw::web::Query<CallbackParams>,
+    config: aw::web::Data<drama::config::Config>,
+) -> Result<impl aw::Responder, aw::Error> {
     println!("code {}\nstate {}", params.code, params.state);
-    "nice"
+    let redirect_uri = "http://127.0.0.1:9999/callback";
+    let body = format!(
+        "grant_type=authorization_code&code={code}&redirect_uri={redirect_uri}",
+        code = params.code,
+        redirect_uri = redirect_uri
+    );
+    let token: Token = HttpClient::new()
+        .post(&config.access_token_url)
+        .basic_auth(&config.client_id, Some(&config.client_secret))
+        .body(body)
+        .send()
+        .await
+        .map_err(|_| aw::error::InternalError::new("", http::StatusCode::INTERNAL_SERVER_ERROR))?
+        .error_for_status()
+        .unwrap()
+        .json()
+        .await
+        .unwrap();
+    println!("{:#?}", token);
+    Ok("nice")
 }
 
 #[actix_web::main]
