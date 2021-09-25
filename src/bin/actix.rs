@@ -3,7 +3,7 @@ use reqwest::Client as HttpClient;
 
 #[aw::get("/start")]
 async fn start(config: aw::web::Data<drama::config::Config>) -> aw::HttpResponse {
-    let scope = "identity,edit,history,mysubreddits,read";
+    let scope = "identity,history,mysubreddits,read";
     let redirect_uri = "http://127.0.0.1:9999/callback";
     let state = "64990aeb-5178-43d3-8ccb-110962843622";
     let url = format!(
