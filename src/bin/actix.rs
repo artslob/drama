@@ -1,7 +1,7 @@
 use actix_web as aw;
 use reqwest::Client as HttpClient;
 
-#[aw::get("/start")]
+#[aw::get("/")]
 async fn start(config: aw::web::Data<drama::config::Config>) -> aw::HttpResponse {
     let scope = "identity,history,mysubreddits,read";
     let redirect_uri = "http://127.0.0.1:9999/callback";
