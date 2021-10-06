@@ -10,6 +10,25 @@ struct Token {
     scope: String,
 }
 
+async fn insert_token(pool: &sqlx::PgPool) -> Result<Token, sqlx::Error> {
+    let mut tx = pool.begin().await?;
+    let token: Token = sqlx::query_as::<_, Token>(
+        "INSERT INTO token (uuid, access_token, refresh_token, token_type, \
+    expires_in, scope) VALUES ($1, $2, $3, $4, $5, $6)  \
+    RETURNING access_token, refresh_token, token_type, expires_in, scope",
+    )
+    .bind(uuid::Uuid::new_v4())
+    .bind("access")
+    .bind("refresh")
+    .bind("token type")
+    .bind(1i32)
+    .bind("scope")
+    .fetch_one(&mut tx)
+    .await?;
+    tx.commit().await?;
+    Ok(token)
+}
+
 #[tokio::main]
 async fn main() -> Result<(), sqlx::Error> {
     let pool = PgPoolOptions::new()
@@ -23,19 +42,7 @@ async fn main() -> Result<(), sqlx::Error> {
         .fetch_one(&pool)
         .await?;
 
-    let token: Token = sqlx::query_as::<_, Token>(
-        "INSERT INTO token (uuid, access_token, refresh_token, token_type, \
-    expires_in, scope) VALUES ($1, $2, $3, $4, $5, $6)  \
-    RETURNING access_token, refresh_token, token_type, expires_in, scope",
-    )
-    .bind(uuid::Uuid::new_v4())
-    .bind("access")
-    .bind("refresh")
-    .bind("token type")
-    .bind(1i32)
-    .bind("scope")
-    .fetch_one(&pool)
-    .await?;
+    let token: Token = insert_token(&pool).await?;
 
     println!("{:#?}", token);
 
