@@ -2,13 +2,14 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 #[derive(Serialize, Deserialize, Debug)]
 struct TaskCommon {
     uid: Uuid,
     created_at: DateTime<Utc>,
-    // can be added:
-    // user info
-    // app version
+    app_version: String,
+    // can be added: user info
 }
 
 impl TaskCommon {
@@ -16,6 +17,7 @@ impl TaskCommon {
         Self {
             uid: Uuid::new_v4(),
             created_at: Utc::now(),
+            app_version: VERSION.to_string(),
         }
     }
 }
