@@ -2,13 +2,12 @@ use std::time::Duration;
 
 use lapin::{
     options::*, publisher_confirm::Confirmation, types::FieldTable, BasicProperties, Connection,
-    ConnectionProperties, Result,
+    ConnectionProperties,
 };
 use log::info;
-use rand::Rng;
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> drama::Result<()> {
     if std::env::var("RUST_LOG").is_err() {
         std::env::set_var("RUST_LOG", "info");
     }
@@ -39,22 +38,22 @@ async fn main() -> Result<()> {
     info!("Declared queue {:?}", queue);
 
     loop {
-        let complexity = rand::thread_rng().gen_range(0..10);
-        let complexity = "#".repeat(complexity);
-        let now = chrono::Local::now().to_string();
-        let payload = format!("msg {} compl {}", now, complexity);
+        let task = drama::task::Task::CreateUser {
+            common: Default::default(),
+            uid: uuid::Uuid::new_v4(),
+        };
         let confirm = channel
             .basic_publish(
                 "",
                 "hello",
                 BasicPublishOptions::default(),
-                payload.clone().into_bytes(),
+                bincode::serialize(&task)?,
                 BasicProperties::default().with_delivery_mode(2),
             )
             .await?
             .await?;
         assert_eq!(confirm, Confirmation::NotRequested);
-        println!("sent {}", payload);
-        tokio::time::sleep(Duration::from_secs(1)).await;
+        info!("sent task create user");
+        tokio::time::sleep(Duration::from_secs(5)).await;
     }
 }
