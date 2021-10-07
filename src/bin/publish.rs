@@ -38,10 +38,7 @@ async fn main() -> drama::Result<()> {
     info!("Declared queue {:?}", queue);
 
     loop {
-        let task = drama::task::Task::CreateUser {
-            common: Default::default(),
-            uid: uuid::Uuid::new_v4(),
-        };
+        let task = drama::task::Task::CreateUserCron(Default::default());
         let confirm = channel
             .basic_publish(
                 "",

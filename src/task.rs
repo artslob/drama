@@ -6,9 +6,9 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TaskCommon {
-    uid: Uuid,
-    created_at: DateTime<Utc>,
-    app_version: String,
+    pub uid: Uuid,
+    pub created_at: DateTime<Utc>,
+    pub app_version: String,
     // can be added: user info
 }
 
@@ -42,4 +42,5 @@ pub enum Task {
         common: TaskCommon,
         uid: Uuid,
     },
+    CreateUserCron(TaskCommon),
 }

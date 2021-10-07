@@ -1,9 +1,12 @@
 use futures_util::StreamExt;
-use lapin::{options::*, types::FieldTable, Connection, ConnectionProperties, Result};
+use lapin::{options::*, types::FieldTable, BasicProperties, Connection, ConnectionProperties};
 use log::info;
+use uuid::Uuid;
+
+use drama::task::Task;
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> drama::Result<()> {
     if std::env::var("RUST_LOG").is_err() {
         std::env::set_var("RUST_LOG", "info");
     }
@@ -44,19 +47,44 @@ async fn main() -> Result<()> {
     info!("will consume");
     while let Some(delivery) = consumer.next().await {
         let (_, delivery) = delivery.expect("error in consumer");
-        match std::str::from_utf8(&delivery.data) {
-            Ok(s) => {
-                let s = s.to_string();
-                tokio::spawn(async move {
-                    let secs = s.matches('#').count();
-                    tokio::time::sleep(std::time::Duration::from_secs(secs as u64)).await;
-                    info!("msg waited {}: {}", secs, s);
-                });
-            }
-            Err(e) => {
-                info!("error! {}", e)
-            }
-        }
+        let task = bincode::deserialize(&delivery.data);
+        let task: drama::task::Task = match task {
+            Ok(task) => task,
+            Err(_) => continue,
+        };
+        let channel = channel.clone();
+        tokio::spawn(async move {
+            info!("msg waited");
+            match task {
+                // Task::CollectNewSubreddits { .. } => {}
+                // Task::UpdateSubredditInfo { .. } => {}
+                Task::CreateUser { common, uid } => {
+                    info!(
+                        "got task to create user created at {} with row uuid {}",
+                        common.created_at, uid
+                    );
+                }
+                Task::CreateUserCron(_) => {
+                    // TODO select tokens and send them as personal tasks
+                    info!("got cron task to create user... sending new task");
+                    channel
+                        .basic_publish(
+                            "",
+                            "hello",
+                            BasicPublishOptions::default(),
+                            bincode::serialize(&drama::task::Task::CreateUser {
+                                common: Default::default(),
+                                uid: Uuid::new_v4(),
+                            })?,
+                            BasicProperties::default().with_delivery_mode(2),
+                        )
+                        .await?
+                        .await?;
+                }
+                _ => {}
+            };
+            Ok(()) as drama::Result<()>
+        });
         delivery.ack(BasicAckOptions::default()).await.expect("ack");
     }
     Ok(())
