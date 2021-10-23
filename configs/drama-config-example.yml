@@ -1,7 +1,7 @@
 client_id: "id"
 client_secret: "secret"
 user_agent:
-  # empty fields are computed ar runtime
+  # empty fields are computed at runtime
   platform:
   app_id:
   version:
