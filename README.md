@@ -18,6 +18,10 @@ Copy and edit config files:
 1. `configs/drama-config-example.yml` -> `configs/drama-config.yml`
 
 To export env variables:
-```bash
+```shell
 export $(cat .env.example | xargs)
+```
+To install sqlx-cli:
+```shell
+cargo install sqlx-cli --locked
 ```
