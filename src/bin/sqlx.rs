@@ -49,6 +49,31 @@ async fn create_user(
         .json()
         .await?;
     println!("{:?}", user);
+    let mut tx = pool.begin().await?;
+    sqlx::query(
+        r#"INSERT INTO "user" (id, accept_followers, has_subscribed, has_verified_email,
+        hide_from_robots, is_employee, is_gold, is_mod, name,
+        total_karma, link_karma, awardee_karma, awarder_karma, comment_karma, verified)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)"#,
+    )
+    .bind(user.id)
+    .bind(user.accept_followers)
+    .bind(user.has_subscribed)
+    .bind(user.has_verified_email)
+    .bind(user.hide_from_robots)
+    .bind(user.is_employee)
+    .bind(user.is_gold)
+    .bind(user.is_mod)
+    .bind(user.name)
+    .bind(user.total_karma)
+    .bind(user.link_karma)
+    .bind(user.awardee_karma)
+    .bind(user.awarder_karma)
+    .bind(user.comment_karma)
+    .bind(user.verified)
+    .execute(&mut tx)
+    .await?;
+    tx.commit().await?;
     Ok(())
 }
 
