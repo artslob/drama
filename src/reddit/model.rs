@@ -53,6 +53,25 @@ pub struct Post {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct User {
+    pub id: String,
+    pub accept_followers: bool,
+    pub has_subscribed: bool,
+    pub has_verified_email: bool,
+    pub hide_from_robots: bool,
+    pub is_employee: bool,
+    pub is_gold: bool,
+    pub is_mod: bool,
+    pub name: String,
+    pub total_karma: i32,
+    pub link_karma: i32,
+    pub awardee_karma: i32,
+    pub awarder_karma: i32,
+    pub comment_karma: i32,
+    pub verified: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Listing<T> {
     after: Option<String>,
     before: Option<String>,

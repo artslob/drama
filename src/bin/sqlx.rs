@@ -1,3 +1,4 @@
+use drama::reddit::model::{Data, User};
 use sqlx::postgres::PgPoolOptions;
 use std::time::Duration;
 
@@ -25,19 +26,36 @@ async fn insert_token(pool: &sqlx::PgPool) -> Result<Token, sqlx::Error> {
     .bind("scope")
     .fetch_one(&mut tx)
     .await?;
-    tx.commit().await?;
+    tx.rollback().await?;
     Ok(token)
 }
 
-async fn create_user(pool: &sqlx::PgPool) -> Result<(), sqlx::Error> {
-    let _tokens = sqlx::query_as::<_, Token>("SELECT * FROM token LIMIT 10")
-        .fetch_all(pool)
+async fn create_user(
+    pool: &sqlx::PgPool,
+    config: &drama::config::Config,
+) -> Result<(), drama::Error> {
+    let token = sqlx::query_as::<_, Token>("SELECT * FROM token LIMIT 1")
+        .fetch_one(pool)
+        .await
+        .map_err(|_| drama::Error::from("could not select token"))?;
+    // println!("{:?}", token);
+    let user: User = reqwest::Client::builder()
+        .user_agent(config.user_agent.to_string())
+        .build()?
+        .get("https://oauth.reddit.com/api/v1/me")
+        .bearer_auth(token.access_token)
+        .send()
+        .await?
+        .json()
         .await?;
+    println!("{:?}", user);
     Ok(())
 }
 
 #[tokio::main]
-async fn main() -> Result<(), sqlx::Error> {
+async fn main() -> Result<(), drama::Error> {
+    let config = drama::config::Config::from_env()?;
+
     let pool = PgPoolOptions::new()
         .max_connections(5)
         .connect_timeout(Duration::from_secs(5))
@@ -50,10 +68,10 @@ async fn main() -> Result<(), sqlx::Error> {
         .await?;
     assert_eq!(row.0, 150);
 
-    let token: Token = insert_token(&pool).await?;
-    println!("{:#?}", token);
+    // let token: Token = insert_token(&pool).await?;
+    // println!("{:#?}", token);
 
-    create_user(&pool).await?;
+    create_user(&pool, &config).await?;
 
     Ok(())
 }
