@@ -29,6 +29,13 @@ async fn insert_token(pool: &sqlx::PgPool) -> Result<Token, sqlx::Error> {
     Ok(token)
 }
 
+async fn create_user(pool: &sqlx::PgPool) -> Result<(), sqlx::Error> {
+    let _tokens = sqlx::query_as::<_, Token>("SELECT * FROM token LIMIT 10")
+        .fetch_all(pool)
+        .await?;
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<(), sqlx::Error> {
     let pool = PgPoolOptions::new()
@@ -41,12 +48,12 @@ async fn main() -> Result<(), sqlx::Error> {
         .bind(150_i64)
         .fetch_one(&pool)
         .await?;
+    assert_eq!(row.0, 150);
 
     let token: Token = insert_token(&pool).await?;
-
     println!("{:#?}", token);
 
-    assert_eq!(row.0, 150);
+    create_user(&pool).await?;
 
     Ok(())
 }
