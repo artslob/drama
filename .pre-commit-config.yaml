@@ -4,5 +4,6 @@ repos:
     hooks:
       - id: fmt
       - id: cargo-check
+        args: ['--all-targets']
       - id: clippy
         args: ['--all-targets', '--all-features', '--', '-D', 'clippy::all', '-D', 'unused_must_use']
