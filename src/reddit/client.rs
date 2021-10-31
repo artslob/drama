@@ -13,12 +13,12 @@ struct Token {
     scope: String,
 }
 
-pub struct Reddit {
+pub struct Client {
     client: HttpClient,
     api_base_url: String,
 }
 
-impl Reddit {
+impl Client {
     pub fn new(config: &crate::config::Config) -> crate::Result<Self> {
         let token: Token = HttpClient::new()
             .post(&config.access_token_url)
@@ -33,7 +33,7 @@ impl Reddit {
             .default_headers(Self::default_headers(&token)?)
             .build()?;
 
-        Ok(Reddit {
+        Ok(Client {
             client,
             api_base_url: config.api_base_url.clone(),
         })
