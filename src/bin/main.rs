@@ -9,14 +9,18 @@ fn main() -> drama::Result<()> {
 
     let client = reddit::Client::new(&config)?;
 
-    let json: Data<Subreddit> = client.get("r/redditdev/about")?.json()?;
-    println!("{:#?}", json);
+    let about_redditdev: Data<Subreddit> = client.get("r/redditdev/about")?.json()?;
+    println!("{:#?}", about_redditdev);
 
     let tail = format!("user/{}/about", config.user_agent.reddit_username);
-    let _about_user: serde_json::Value = client.get(&tail)?.json()?;
+    let about_user: serde_json::Value = client.get(&tail)?.json()?;
+    println!("{}", about_user);
 
     let json: Data<Listing<Data<Post>>> = client.get("top")?.json()?;
     println!("{}", serde_json::to_string_pretty(&json)?);
+
+    let about_user: serde_json::Value = client.get("subreddits/mine/subscriber")?.json()?;
+    println!("{}", about_user);
 
     Ok(())
 }
