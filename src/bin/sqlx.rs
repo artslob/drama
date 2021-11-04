@@ -1,4 +1,4 @@
-use drama::reddit::model::{Data, User};
+use drama::reddit::model::User;
 use sqlx::postgres::PgPoolOptions;
 use std::time::Duration;
 
@@ -11,7 +11,7 @@ struct Token {
     scope: String,
 }
 
-async fn insert_token(pool: &sqlx::PgPool) -> Result<Token, sqlx::Error> {
+async fn _insert_token(pool: &sqlx::PgPool) -> Result<Token, sqlx::Error> {
     let mut tx = pool.begin().await?;
     let token: Token = sqlx::query_as::<_, Token>(
         "INSERT INTO token (uuid, access_token, refresh_token, token_type, \

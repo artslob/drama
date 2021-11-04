@@ -7,4 +7,4 @@ tests:
     - rustup component add clippy
     - cargo test --workspace --verbose --all --locked
     - cargo fmt --all -- --check
-    - cargo clippy --all-targets --all-features -- -D clippy::all -D unused_must_use
+    - cargo clippy --all-targets --all-features -- -D clippy::all -D unused_must_use -D warnings
