@@ -46,6 +46,7 @@ async fn create_user(
         .bearer_auth(token.access_token)
         .send()
         .await?
+        .error_for_status()?
         .json()
         .await?;
     println!("{:?}", user);
