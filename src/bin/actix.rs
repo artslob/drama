@@ -43,7 +43,7 @@ struct Token {
 async fn insert_token(pool: &sqlx::PgPool, token: Token) -> Result<Token, sqlx::Error> {
     let mut tx = pool.begin().await?;
     let token: Token = sqlx::query_as::<_, Token>(
-        "INSERT INTO token (uuid, access_token, refresh_token, token_type, \
+        "INSERT INTO registration_token (uuid, access_token, refresh_token, token_type, \
     expires_in, scope) VALUES ($1, $2, $3, $4, $5, $6)  \
     RETURNING access_token, refresh_token, token_type, expires_in, scope",
     )
@@ -59,8 +59,29 @@ async fn insert_token(pool: &sqlx::PgPool, token: Token) -> Result<Token, sqlx::
     Ok(token)
 }
 
-fn create_internal_error() -> aw::error::InternalError<&'static str> {
+fn _create_internal_error() -> aw::error::InternalError<&'static str> {
     aw::error::InternalError::new("", http::StatusCode::INTERNAL_SERVER_ERROR)
+}
+
+async fn request_and_insert_token(
+    config: aw::web::Data<drama::config::Config>,
+    pool: aw::web::Data<sqlx::PgPool>,
+    body: String,
+) -> drama::Result<Token> {
+    let token: Token = HttpClient::new()
+        .post(&config.access_token_url)
+        .basic_auth(&config.client_id, Some(&config.client_secret))
+        .body(body)
+        .send()
+        .await
+        .map_err(|e| drama::Error::from(e.to_string()))?
+        .error_for_status()
+        .map_err(|e| drama::Error::from(e.to_string()))?
+        .json()
+        .await
+        .map_err(|e| drama::Error::from(e.to_string()))?;
+    let token = insert_token(&pool, token).await?;
+    Ok(token)
 }
 
 #[aw::get("/callback")]
@@ -76,21 +97,13 @@ async fn callback(
         code = params.code,
         redirect_uri = redirect_uri
     );
-    let token: Token = HttpClient::new()
-        .post(&config.access_token_url)
-        .basic_auth(&config.client_id, Some(&config.client_secret))
-        .body(body)
-        .send()
-        .await
-        .map_err(|_| create_internal_error())?
-        .error_for_status()
-        .unwrap()
-        .json()
-        .await
-        .unwrap();
-    let token = insert_token(&pool, token)
-        .await
-        .map_err(|_| create_internal_error())?;
+    let token = match request_and_insert_token(config, pool, body).await {
+        Ok(token) => token,
+        Err(e) => {
+            println!("{}", e);
+            panic!();
+        }
+    };
     println!("{:#?}", token);
     Ok("nice")
 }

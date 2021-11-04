@@ -1,2 +1,2 @@
 -- Add down migration script here
-DROP TABLE token;
+DROP TABLE registration_token;

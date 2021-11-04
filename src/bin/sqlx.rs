@@ -14,7 +14,7 @@ struct Token {
 async fn _insert_token(pool: &sqlx::PgPool) -> Result<Token, sqlx::Error> {
     let mut tx = pool.begin().await?;
     let token: Token = sqlx::query_as::<_, Token>(
-        "INSERT INTO token (uuid, access_token, refresh_token, token_type, \
+        "INSERT INTO registration_token (uuid, access_token, refresh_token, token_type, \
     expires_in, scope) VALUES ($1, $2, $3, $4, $5, $6)  \
     RETURNING access_token, refresh_token, token_type, expires_in, scope",
     )

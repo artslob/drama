@@ -1,5 +1,5 @@
 -- Add up migration script here
-CREATE TABLE IF NOT EXISTS token
+CREATE TABLE IF NOT EXISTS registration_token
 (
     uuid          uuid primary key,
     access_token  varchar not null,
