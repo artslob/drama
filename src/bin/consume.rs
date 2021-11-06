@@ -3,6 +3,7 @@ use lapin::{
     options::*, types::FieldTable, BasicProperties, Channel, Connection, ConnectionProperties,
 };
 use log::info;
+use std::time::Duration;
 use uuid::Uuid;
 
 use drama::task::Task;
@@ -21,6 +22,12 @@ async fn main() -> drama::Result<()> {
         ConnectionProperties::default().with_default_executor(8),
     )
     .await?;
+
+    let pool = sqlx::postgres::PgPoolOptions::new()
+        .max_connections(5)
+        .connect_timeout(Duration::from_secs(5))
+        .connect("postgres://drama_user:drama_pass@localhost:5932/drama_db")
+        .await?;
 
     let channel = conn.create_channel().await?;
 
@@ -54,13 +61,13 @@ async fn main() -> drama::Result<()> {
             Ok(task) => task,
             Err(_) => continue,
         };
-        tokio::spawn(handle_task(channel.clone(), task));
+        tokio::spawn(handle_task(channel.clone(), task, pool.clone()));
         delivery.ack(BasicAckOptions::default()).await.expect("ack");
     }
     Ok(())
 }
 
-async fn handle_task(channel: Channel, task: Task) -> drama::Result<()> {
+async fn handle_task(channel: Channel, task: Task, pool: sqlx::PgPool) -> drama::Result<()> {
     info!("msg waited");
     match task {
         Task::CreateUser { common, uid } => {
@@ -69,27 +76,46 @@ async fn handle_task(channel: Channel, task: Task) -> drama::Result<()> {
                 common.created_at, uid
             );
         }
-        Task::CreateUserCron(_) => create_user_cron(channel).await?,
+        Task::CreateUserCron(_) => create_user_cron(channel, &pool).await?,
         _ => {}
     };
     Ok(())
 }
 
-async fn create_user_cron(channel: Channel) -> drama::Result<()> {
+#[derive(Debug, sqlx::FromRow)]
+struct RegistrationToken {
+    uuid: Uuid,
+    access_token: String,
+    refresh_token: String,
+    token_type: String,
+    expires_in: i32,
+    scope: String,
+}
+
+async fn create_user_cron(channel: Channel, pool: &sqlx::PgPool) -> drama::Result<()> {
     // TODO select tokens and send them as personal tasks
     info!("got cron task to create user... sending new task");
-    channel
-        .basic_publish(
-            "",
-            "hello",
-            BasicPublishOptions::default(),
-            bincode::serialize(&Task::CreateUser {
-                common: Default::default(),
-                uid: Uuid::new_v4(),
-            })?,
-            BasicProperties::default().with_delivery_mode(2),
-        )
-        .await?
-        .await?;
+
+    let tokens =
+        sqlx::query_as::<_, RegistrationToken>("SELECT * FROM registration_token LIMIT 10")
+            .fetch_all(pool)
+            .await?;
+
+    for token in tokens {
+        channel
+            .basic_publish(
+                "",
+                "hello",
+                BasicPublishOptions::default(),
+                bincode::serialize(&Task::CreateUser {
+                    common: Default::default(),
+                    uid: token.uuid,
+                })?,
+                BasicProperties::default().with_delivery_mode(2),
+            )
+            .await?
+            .await?;
+    }
+
     Ok(())
 }
