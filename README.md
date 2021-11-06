@@ -25,3 +25,12 @@ To install sqlx-cli:
 ```shell
 cargo install sqlx-cli --locked
 ```
+
+## Constraints naming convention
+```
+index:       "ix_%(column_0_N_label)s"
+unique:      "uq_%(table_name)s_%(column_0_N_name)s"
+check:       "ck_%(table_name)s_%(constraint_name)s"
+foreign key: "fk_%(table_name)s_%(column_0_N_name)s_%(referred_table_name)s_%(referred_column_0_N_name)s"
+primary key: "pk_%(table_name)s"
+```
