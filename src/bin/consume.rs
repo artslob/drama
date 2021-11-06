@@ -1,5 +1,7 @@
 use futures_util::StreamExt;
-use lapin::{options::*, types::FieldTable, BasicProperties, Connection, ConnectionProperties};
+use lapin::{
+    options::*, types::FieldTable, BasicProperties, Channel, Connection, ConnectionProperties,
+};
 use log::info;
 use uuid::Uuid;
 
@@ -48,44 +50,43 @@ async fn main() -> drama::Result<()> {
     while let Some(delivery) = consumer.next().await {
         let (_, delivery) = delivery.expect("error in consumer");
         let task = bincode::deserialize(&delivery.data);
-        let task: drama::task::Task = match task {
+        let task: Task = match task {
             Ok(task) => task,
             Err(_) => continue,
         };
-        let channel = channel.clone();
-        tokio::spawn(async move {
-            info!("msg waited");
-            match task {
-                // Task::CollectNewSubreddits { .. } => {}
-                // Task::UpdateSubredditInfo { .. } => {}
-                Task::CreateUser { common, uid } => {
-                    info!(
-                        "got task to create user created at {} with row uuid {}",
-                        common.created_at, uid
-                    );
-                }
-                Task::CreateUserCron(_) => {
-                    // TODO select tokens and send them as personal tasks
-                    info!("got cron task to create user... sending new task");
-                    channel
-                        .basic_publish(
-                            "",
-                            "hello",
-                            BasicPublishOptions::default(),
-                            bincode::serialize(&drama::task::Task::CreateUser {
-                                common: Default::default(),
-                                uid: Uuid::new_v4(),
-                            })?,
-                            BasicProperties::default().with_delivery_mode(2),
-                        )
-                        .await?
-                        .await?;
-                }
-                _ => {}
-            };
-            Ok(()) as drama::Result<()>
-        });
+        tokio::spawn(handle_task(channel.clone(), task));
         delivery.ack(BasicAckOptions::default()).await.expect("ack");
     }
+    Ok(())
+}
+
+async fn handle_task(channel: Channel, task: Task) -> drama::Result<()> {
+    info!("msg waited");
+    match task {
+        Task::CreateUser { common, uid } => {
+            info!(
+                "got task to create user created at {} with row uuid {}",
+                common.created_at, uid
+            );
+        }
+        Task::CreateUserCron(_) => {
+            // TODO select tokens and send them as personal tasks
+            info!("got cron task to create user... sending new task");
+            channel
+                .basic_publish(
+                    "",
+                    "hello",
+                    BasicPublishOptions::default(),
+                    bincode::serialize(&drama::task::Task::CreateUser {
+                        common: Default::default(),
+                        uid: Uuid::new_v4(),
+                    })?,
+                    BasicProperties::default().with_delivery_mode(2),
+                )
+                .await?
+                .await?;
+        }
+        _ => {}
+    };
     Ok(())
 }
