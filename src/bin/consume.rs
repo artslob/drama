@@ -69,24 +69,27 @@ async fn handle_task(channel: Channel, task: Task) -> drama::Result<()> {
                 common.created_at, uid
             );
         }
-        Task::CreateUserCron(_) => {
-            // TODO select tokens and send them as personal tasks
-            info!("got cron task to create user... sending new task");
-            channel
-                .basic_publish(
-                    "",
-                    "hello",
-                    BasicPublishOptions::default(),
-                    bincode::serialize(&drama::task::Task::CreateUser {
-                        common: Default::default(),
-                        uid: Uuid::new_v4(),
-                    })?,
-                    BasicProperties::default().with_delivery_mode(2),
-                )
-                .await?
-                .await?;
-        }
+        Task::CreateUserCron(_) => create_user_cron(channel).await?,
         _ => {}
     };
+    Ok(())
+}
+
+async fn create_user_cron(channel: Channel) -> drama::Result<()> {
+    // TODO select tokens and send them as personal tasks
+    info!("got cron task to create user... sending new task");
+    channel
+        .basic_publish(
+            "",
+            "hello",
+            BasicPublishOptions::default(),
+            bincode::serialize(&Task::CreateUser {
+                common: Default::default(),
+                uid: Uuid::new_v4(),
+            })?,
+            BasicProperties::default().with_delivery_mode(2),
+        )
+        .await?
+        .await?;
     Ok(())
 }
