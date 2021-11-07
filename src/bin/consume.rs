@@ -1,8 +1,10 @@
+use futures::TryStreamExt;
 use futures_util::StreamExt;
 use lapin::{
     options::*, types::FieldTable, BasicProperties, Channel, Connection, ConnectionProperties,
 };
 use log::info;
+use sqlx::Row;
 use std::time::Duration;
 use uuid::Uuid;
 
@@ -96,12 +98,10 @@ async fn create_user_cron(channel: Channel, pool: &sqlx::PgPool) -> drama::Resul
     // TODO select tokens and send them as personal tasks
     info!("got cron task to create user... sending new task");
 
-    let tokens =
-        sqlx::query_as::<_, RegistrationToken>("SELECT * FROM registration_token LIMIT 10")
-            .fetch_all(pool)
-            .await?;
+    let mut uuids = sqlx::query("SELECT uuid FROM registration_token LIMIT 10").fetch(pool);
 
-    for token in tokens {
+    while let Some(row) = uuids.try_next().await? {
+        let uuid: Uuid = row.try_get("uuid")?;
         channel
             .basic_publish(
                 "",
@@ -109,7 +109,7 @@ async fn create_user_cron(channel: Channel, pool: &sqlx::PgPool) -> drama::Resul
                 BasicPublishOptions::default(),
                 bincode::serialize(&Task::CreateUser {
                     common: Default::default(),
-                    uid: token.uuid,
+                    uid: uuid,
                 })?,
                 BasicProperties::default().with_delivery_mode(2),
             )
