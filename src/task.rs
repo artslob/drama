@@ -30,17 +30,10 @@ impl Default for TaskCommon {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Task {
-    CollectNewSubreddits {
-        common: TaskCommon,
-        limit: i32,
-    },
-    UpdateSubredditInfo {
-        common: TaskCommon,
-        subreddit_id: String,
-    },
-    CreateUser {
-        common: TaskCommon,
-        uid: Uuid,
-    },
     CreateUserCron(TaskCommon),
+    CreateUser { common: TaskCommon, uid: Uuid },
+    UpdateUserSubredditsCron(TaskCommon),
+    UpdateUserSubreddits { common: TaskCommon, user_id: String },
+    UpdateUserInfoCron(TaskCommon),
+    UpdateUserInfo { common: TaskCommon, user_id: String },
 }

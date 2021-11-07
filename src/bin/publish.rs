@@ -1,8 +1,9 @@
 use std::time::Duration;
 
+use drama::task::Task;
 use lapin::{
-    options::*, publisher_confirm::Confirmation, types::FieldTable, BasicProperties, Connection,
-    ConnectionProperties,
+    options::*, publisher_confirm::Confirmation, types::FieldTable, BasicProperties, Channel,
+    Connection, ConnectionProperties,
 };
 use log::info;
 
@@ -37,20 +38,38 @@ async fn main() -> drama::Result<()> {
 
     info!("Declared queue {:?}", queue);
 
+    let schedule = vec![
+        (Task::CreateUserCron(Default::default()), 10),
+        (Task::UpdateUserSubredditsCron(Default::default()), 20),
+        (Task::UpdateUserInfoCron(Default::default()), 30),
+    ];
+
+    for (task, secs) in schedule {
+        let duration = Duration::from_secs(secs);
+        tokio::spawn(send_task(channel.clone(), task, duration));
+    }
+
     loop {
-        let task = drama::task::Task::CreateUserCron(Default::default());
+        tokio::time::sleep(Duration::from_secs(60 * 5)).await;
+    }
+}
+
+async fn send_task(channel: Channel, task: Task, duration: Duration) -> drama::Result<()> {
+    // TODO do not use ? operator as it makes func to return
+    loop {
+        info!("sending task task {:?}", task);
+        let properties = BasicProperties::default().with_delivery_mode(2);
         let confirm = channel
             .basic_publish(
                 "",
                 "hello",
                 BasicPublishOptions::default(),
                 bincode::serialize(&task)?,
-                BasicProperties::default().with_delivery_mode(2),
+                properties,
             )
             .await?
             .await?;
         assert_eq!(confirm, Confirmation::NotRequested);
-        info!("sent task create user");
-        tokio::time::sleep(Duration::from_secs(5)).await;
+        tokio::time::sleep(duration).await
     }
 }
