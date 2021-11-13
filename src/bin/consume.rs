@@ -6,7 +6,7 @@ use futures_util::StreamExt;
 use lapin::{
     options::*, types::FieldTable, BasicProperties, Channel, Connection, ConnectionProperties,
 };
-use log::info;
+use log::{error, info};
 use sqlx::Row;
 use std::time::Duration;
 use uuid::Uuid;
@@ -86,7 +86,7 @@ async fn handle_task(
     };
     match result {
         Ok(_) => info!("task handled successfully"),
-        Err(err) => info!("result of handled task: {}", err),
+        Err(err) => error!("task was failed: {}", err),
     }
     Ok(())
 }
