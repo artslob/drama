@@ -1,4 +1,4 @@
-use drama::config::Config;
+use drama::config::{Config, ConfigRef};
 use drama::reddit::model::User;
 use drama::task::{Task, TaskCommon};
 use futures::TryStreamExt;
@@ -26,8 +26,7 @@ async fn main() -> drama::Result<()> {
     )
     .await?;
 
-    let config = drama::config::Config::from_env()?;
-    let config: &'static Config = Box::leak(Box::new(config));
+    let config = Config::from_env()?.permanent();
 
     let pool = sqlx::postgres::PgPoolOptions::new()
         .max_connections(5)
@@ -74,7 +73,7 @@ async fn main() -> drama::Result<()> {
 }
 
 async fn handle_task(
-    config: &'static Config,
+    config: ConfigRef,
     channel: Channel,
     task: Task,
     pool: sqlx::PgPool,
@@ -93,7 +92,7 @@ async fn handle_task(
 }
 
 async fn create_user(
-    config: &'static Config,
+    config: ConfigRef,
     pool: &sqlx::PgPool,
     common: TaskCommon,
     uid: Uuid,

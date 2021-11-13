@@ -1,7 +1,8 @@
+use serde::Deserialize;
 use std::fmt::{Display, Formatter};
 use std::path::Path;
 
-use serde::Deserialize;
+pub type ConfigRef = &'static Config;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Config {
@@ -25,6 +26,16 @@ impl Config {
     pub fn from_file<P: AsRef<Path>>(path: P) -> crate::Result<Self> {
         let config_file = std::fs::File::open(path)?;
         Ok(serde_yaml::from_reader(config_file)?)
+    }
+
+    pub fn permanent(self) -> ConfigRef {
+        self.into()
+    }
+}
+
+impl From<Config> for ConfigRef {
+    fn from(config: Config) -> Self {
+        Box::leak(Box::new(config))
     }
 }
 
