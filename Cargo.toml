@@ -25,3 +25,4 @@ uuid = { version = "0.8", features = ["serde", "v4"] }
 actix-web = "4.0.0-beta.9"
 sqlx = { version = "0.5", features = ["runtime-tokio-native-tls", "postgres", "macros", "migrate", "tls", "uuid"]}
 futures = "0.3"
+strum = { version = "0.22", features = ["derive"] }

@@ -79,14 +79,15 @@ async fn handle_task(
     pool: sqlx::PgPool,
 ) -> drama::Result<()> {
     info!("msg waited");
+    let task_name: &'static str = (&task).into();
     let result = match task {
         Task::CreateUser { common, uid } => create_user(config, &pool, common, uid).await,
         Task::CreateUserCron(_) => create_user_cron(channel, &pool).await,
         _ => return Ok(()),
     };
     match result {
-        Ok(_) => info!("task handled successfully"),
-        Err(err) => error!("task was failed: {}", err),
+        Ok(_) => info!("task {} handled successfully", task_name),
+        Err(err) => error!("task {} was failed: {}", task_name, err),
     }
     Ok(())
 }

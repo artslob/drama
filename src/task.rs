@@ -28,7 +28,7 @@ impl Default for TaskCommon {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, strum::IntoStaticStr)]
 pub enum Task {
     CreateUserCron(TaskCommon),
     CreateUser { common: TaskCommon, uid: Uuid },
