@@ -2,9 +2,9 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Subreddit {
-    display_name: String,
-    header_title: String,
     id: String,
+    display_name: String,
+    header_title: Option<String>,
     name: String,
     public_description: String,
     subreddit_type: String,
@@ -78,7 +78,7 @@ pub struct Listing<T> {
     children: Vec<T>,
     dist: i32,
     geo_filter: String,
-    modhash: String,
+    modhash: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

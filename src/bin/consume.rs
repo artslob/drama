@@ -127,7 +127,9 @@ async fn update_user_subreddits(
         }
     };
 
-    let subreddits: serde_json::Value = reqwest::Client::builder()
+    use drama::reddit::model::{Data, Listing, Subreddit};
+
+    let subreddits: Data<Listing<Data<Subreddit>>> = reqwest::Client::builder()
         .user_agent(config.user_agent.to_string())
         .build()?
         .get("https://oauth.reddit.com/subreddits/mine/subscriber")
