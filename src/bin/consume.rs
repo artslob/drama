@@ -81,14 +81,39 @@ async fn handle_task(
     info!("msg waited");
     let task_name: &'static str = (&task).into();
     let result = match task {
-        Task::CreateUser { common, uid } => create_user(config, &pool, common, uid).await,
         Task::CreateUserCron(_) => create_user_cron(channel, &pool).await,
+        Task::CreateUser { common, uid } => create_user(config, &pool, common, uid).await,
+        Task::UpdateUserSubredditsCron(_) => update_user_subreddits_cron(channel, &pool).await,
         _ => return Ok(()),
     };
     match result {
         Ok(_) => info!("task {} handled successfully", task_name),
         Err(err) => error!("task {} was failed: {}", task_name, err),
     }
+    Ok(())
+}
+
+async fn update_user_subreddits_cron(channel: Channel, pool: &sqlx::PgPool) -> drama::Result<()> {
+    let mut ids = sqlx::query(r#"SELECT id FROM "user" LIMIT 10"#).fetch(pool);
+
+    while let Some(row) = ids.try_next().await? {
+        let user_id: String = row.try_get("id")?;
+        let task = Task::UpdateUserSubreddits {
+            common: Default::default(),
+            user_id,
+        };
+        channel
+            .basic_publish(
+                "",
+                "hello",
+                BasicPublishOptions::default(),
+                bincode::serialize(&task)?,
+                BasicProperties::default().with_delivery_mode(2),
+            )
+            .await?
+            .await?;
+    }
+
     Ok(())
 }
 
