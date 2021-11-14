@@ -84,6 +84,9 @@ async fn handle_task(
         Task::CreateUserCron(_) => create_user_cron(channel, &pool).await,
         Task::CreateUser { common, uid } => create_user(config, &pool, common, uid).await,
         Task::UpdateUserSubredditsCron(_) => update_user_subreddits_cron(channel, &pool).await,
+        Task::UpdateUserSubreddits { common: _, user_id } => {
+            update_user_subreddits(config, &pool, user_id).await
+        }
         _ => return Ok(()),
     };
     match result {
@@ -93,6 +96,51 @@ async fn handle_task(
     Ok(())
 }
 
+#[derive(Debug, sqlx::FromRow)]
+struct AccessToken {
+    uuid: Uuid,
+    user_id: String,
+    access_token: String,
+    token_type: String,
+    expires_in: i32,
+    scope: String,
+}
+
+async fn update_user_subreddits(
+    config: ConfigRef,
+    pool: &sqlx::PgPool,
+    user_id: String,
+) -> drama::Result<()> {
+    // TODO select newest token
+    let access_token =
+        sqlx::query_as::<_, AccessToken>("SELECT * FROM access_token WHERE user_id = $1")
+            .bind(&user_id)
+            .fetch_optional(pool)
+            .await?;
+
+    // TODO check token is actual or get new with refresh token
+    let access_token = match access_token {
+        Some(token) => token,
+        None => {
+            info!("access token for user {} not found", &user_id);
+            return Ok(());
+        }
+    };
+
+    let subreddits: serde_json::Value = reqwest::Client::builder()
+        .user_agent(config.user_agent.to_string())
+        .build()?
+        .get("https://oauth.reddit.com/subreddits/mine/subscriber")
+        .bearer_auth(&access_token.access_token)
+        .send()
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
+    info!("{}", serde_json::to_string_pretty(&subreddits)?);
+
+    Ok(())
+}
 async fn update_user_subreddits_cron(channel: Channel, pool: &sqlx::PgPool) -> drama::Result<()> {
     let mut ids = sqlx::query(r#"SELECT id FROM "user" LIMIT 10"#).fetch(pool);
 
