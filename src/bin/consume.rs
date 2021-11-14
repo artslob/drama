@@ -149,14 +149,7 @@ async fn update_user_subreddits(
         .execute(&mut tx)
         .await?;
 
-    let subreddits: Vec<_> = subreddits
-        .data
-        .children
-        .iter()
-        .map(|data| &data.data)
-        .collect();
-
-    for subreddit in subreddits {
+    for subreddit in subreddits.data.children.iter().map(|data| &data.data) {
         sqlx::query(
             r#"INSERT INTO subreddit
         (id, user_id, display_name, header_title, name,
