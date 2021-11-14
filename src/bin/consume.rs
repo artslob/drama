@@ -129,6 +129,7 @@ async fn update_user_subreddits(
 
     use drama::reddit::model::{Data, Listing, Subreddit};
 
+    // TODO process "before" items in pagination result
     let subreddits: Data<Listing<Data<Subreddit>>> = reqwest::Client::builder()
         .user_agent(config.user_agent.to_string())
         .build()?
@@ -141,8 +142,47 @@ async fn update_user_subreddits(
         .await?;
     info!("{}", serde_json::to_string_pretty(&subreddits)?);
 
+    let mut tx = pool.begin().await?;
+
+    sqlx::query(r#"DELETE FROM subreddit WHERE user_id = $1"#)
+        .bind(&user_id)
+        .execute(&mut tx)
+        .await?;
+
+    let subreddits: Vec<_> = subreddits
+        .data
+        .children
+        .iter()
+        .map(|data| &data.data)
+        .collect();
+
+    for subreddit in subreddits {
+        sqlx::query(
+            r#"INSERT INTO subreddit
+        (id, user_id, display_name, header_title, name,
+        public_description, subreddit_type, subscribers, title, url)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        ON CONFLICT (id) DO NOTHING"#,
+        )
+        .bind(&subreddit.id)
+        .bind(&user_id)
+        .bind(&subreddit.display_name)
+        .bind(&subreddit.header_title)
+        .bind(&subreddit.name)
+        .bind(&subreddit.public_description)
+        .bind(&subreddit.subreddit_type)
+        .bind(&subreddit.subscribers)
+        .bind(&subreddit.title)
+        .bind(&subreddit.url)
+        .execute(&mut tx)
+        .await?;
+    }
+
+    tx.commit().await?;
+
     Ok(())
 }
+
 async fn update_user_subreddits_cron(channel: Channel, pool: &sqlx::PgPool) -> drama::Result<()> {
     let mut ids = sqlx::query(r#"SELECT id FROM "user" LIMIT 10"#).fetch(pool);
 
