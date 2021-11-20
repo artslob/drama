@@ -6,6 +6,7 @@ use lapin::{
     Connection, ConnectionProperties,
 };
 use log::info;
+use strum::IntoEnumIterator;
 
 #[tokio::main]
 async fn main() -> drama::Result<()> {
@@ -38,29 +39,23 @@ async fn main() -> drama::Result<()> {
 
     info!("Declared queue {:?}", queue);
 
-    let schedule = vec![
-        (Cron::CreateUserCron, 10),
-        (Cron::UpdateUserSubredditsCron, 20),
-        (Cron::UpdateUserInfoCron, 30),
-    ];
+    for cron in Cron::iter() {
+        tokio::spawn(send_task(channel.clone(), cron));
+    }
 
-    for (cron, secs) in schedule {
-        let duration = Duration::from_secs(secs);
+    loop {
+        tokio::time::sleep(Duration::from_secs(10)).await;
+    }
+}
+
+async fn send_task(channel: Channel, cron: Cron) -> drama::Result<()> {
+    // TODO do not use ? operator as it makes func to return
+    let duration = cron.frequency();
+    loop {
         let task = Task {
             common: Default::default(),
             data: Data::Cron(cron),
         };
-        tokio::spawn(send_task(channel.clone(), task, duration));
-    }
-
-    loop {
-        tokio::time::sleep(Duration::from_secs(60 * 5)).await;
-    }
-}
-
-async fn send_task(channel: Channel, task: Task, duration: Duration) -> drama::Result<()> {
-    // TODO do not use ? operator as it makes func to return
-    loop {
         info!("sending task task {:?}", task);
         let properties = BasicProperties::default().with_delivery_mode(2);
         let confirm = channel

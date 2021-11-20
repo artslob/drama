@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::time::Duration;
 use uuid::Uuid;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -42,11 +43,22 @@ pub enum Data {
     UpdateUserInfo { user_id: String },
 }
 
-#[derive(Serialize, Deserialize, Debug, strum::IntoStaticStr)]
+#[derive(Serialize, Deserialize, Debug, strum::IntoStaticStr, strum::EnumIter, Copy, Clone)]
 pub enum Cron {
     CreateUserCron,
     UpdateUserSubredditsCron,
     UpdateUserInfoCron,
+}
+
+impl Cron {
+    pub fn frequency(&self) -> Duration {
+        let secs = match self {
+            Cron::CreateUserCron => 10,
+            Cron::UpdateUserSubredditsCron => 20,
+            Cron::UpdateUserInfoCron => 30,
+        };
+        Duration::from_secs(secs)
+    }
 }
 
 #[cfg(test)]
