@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use drama::task::Task;
+use drama::task::{Cron, Data, Task};
 use lapin::{
     options::*, publisher_confirm::Confirmation, types::FieldTable, BasicProperties, Channel,
     Connection, ConnectionProperties,
@@ -39,13 +39,17 @@ async fn main() -> drama::Result<()> {
     info!("Declared queue {:?}", queue);
 
     let schedule = vec![
-        (Task::CreateUserCron(Default::default()), 10),
-        (Task::UpdateUserSubredditsCron(Default::default()), 20),
-        (Task::UpdateUserInfoCron(Default::default()), 30),
+        (Cron::CreateUserCron, 10),
+        (Cron::UpdateUserSubredditsCron, 20),
+        (Cron::UpdateUserInfoCron, 30),
     ];
 
-    for (task, secs) in schedule {
+    for (cron, secs) in schedule {
         let duration = Duration::from_secs(secs);
+        let task = Task {
+            common: Default::default(),
+            data: Data::Cron(cron),
+        };
         tokio::spawn(send_task(channel.clone(), task, duration));
     }
 

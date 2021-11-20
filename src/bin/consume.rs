@@ -1,6 +1,6 @@
 use drama::config::{Config, ConfigRef};
 use drama::reddit::model::User;
-use drama::task::{Task, TaskCommon};
+use drama::task::{Cron, Data, Task, TaskCommon};
 use futures::TryStreamExt;
 use futures_util::StreamExt;
 use lapin::{
@@ -78,15 +78,18 @@ async fn handle_task(
     pool: sqlx::PgPool,
 ) -> drama::Result<()> {
     info!("msg waited");
-    let task_name: &'static str = (&task).into();
-    let result = match task {
-        Task::CreateUserCron(_) => create_user_cron(channel, &pool).await,
-        Task::CreateUser { common, uid } => create_user(config, &pool, common, uid).await,
-        Task::UpdateUserSubredditsCron(_) => update_user_subreddits_cron(channel, &pool).await,
-        Task::UpdateUserSubreddits { common: _, user_id } => {
+    let task_name: &'static str = (&task.data).into();
+    let common = task.common;
+    let result = match task.data {
+        Data::Cron(cron) => match cron {
+            Cron::CreateUserCron => create_user_cron(channel, &pool).await,
+            Cron::UpdateUserSubredditsCron => update_user_subreddits_cron(channel, &pool).await,
+            Cron::UpdateUserInfoCron => update_user_info_cron(channel, &pool).await,
+        },
+        Data::CreateUser { uid } => create_user(config, &pool, common, uid).await,
+        Data::UpdateUserSubreddits { user_id } => {
             update_user_subreddits(config, &pool, user_id).await
         }
-        Task::UpdateUserInfoCron(_) => update_user_info_cron(channel, &pool).await,
         _ => return Ok(()),
     };
     match result {
@@ -100,9 +103,11 @@ async fn update_user_info_cron(channel: Channel, pool: &sqlx::PgPool) -> drama::
     let mut ids = sqlx::query(r#"SELECT id FROM "user" LIMIT 10"#).fetch(pool);
 
     while let Some(row) = ids.try_next().await? {
-        let task = Task::UpdateUserInfo {
+        let task = Task {
             common: Default::default(),
-            user_id: row.try_get("id")?,
+            data: Data::UpdateUserInfo {
+                user_id: row.try_get("id")?,
+            },
         };
         channel
             .basic_publish(
@@ -204,9 +209,9 @@ async fn update_user_subreddits_cron(channel: Channel, pool: &sqlx::PgPool) -> d
 
     while let Some(row) = ids.try_next().await? {
         let user_id: String = row.try_get("id")?;
-        let task = Task::UpdateUserSubreddits {
+        let task = Task {
             common: Default::default(),
-            user_id,
+            data: Data::UpdateUserSubreddits { user_id },
         };
         channel
             .basic_publish(
@@ -329,16 +334,17 @@ async fn create_user_cron(channel: Channel, pool: &sqlx::PgPool) -> drama::Resul
     let mut uuids = sqlx::query("SELECT uuid FROM registration_token LIMIT 10").fetch(pool);
 
     while let Some(row) = uuids.try_next().await? {
-        let uuid: Uuid = row.try_get("uuid")?;
+        let uid: Uuid = row.try_get("uuid")?;
+        let task = Task {
+            common: Default::default(),
+            data: Data::CreateUser { uid },
+        };
         channel
             .basic_publish(
                 "",
                 "hello",
                 BasicPublishOptions::default(),
-                bincode::serialize(&Task::CreateUser {
-                    common: Default::default(),
-                    uid: uuid,
-                })?,
+                bincode::serialize(&task)?,
                 BasicProperties::default().with_delivery_mode(2),
             )
             .await?
