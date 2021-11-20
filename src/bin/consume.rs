@@ -60,14 +60,12 @@ async fn main() -> drama::Result<()> {
 
     info!("will consume");
     while let Some(delivery) = consumer.next().await {
-        // TODO do not hide channel here?
-        let (_, delivery) = delivery.expect("error in consumer");
-        let task = bincode::deserialize(&delivery.data);
-        let task: Task = match task {
+        let (channel, delivery) = delivery.expect("error in consumer");
+        let task: Task = match bincode::deserialize(&delivery.data) {
             Ok(task) => task,
             Err(_) => continue,
         };
-        tokio::spawn(handle_task(config, channel.clone(), task, pool.clone()));
+        tokio::spawn(handle_task(config, channel, task, pool.clone()));
         delivery.ack(BasicAckOptions::default()).await.expect("ack");
     }
     Ok(())
