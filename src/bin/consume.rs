@@ -60,6 +60,7 @@ async fn main() -> drama::Result<()> {
 
     info!("will consume");
     while let Some(delivery) = consumer.next().await {
+        // TODO do not hide channel here?
         let (_, delivery) = delivery.expect("error in consumer");
         let task = bincode::deserialize(&delivery.data);
         let task: Task = match task {
@@ -87,12 +88,36 @@ async fn handle_task(
         Task::UpdateUserSubreddits { common: _, user_id } => {
             update_user_subreddits(config, &pool, user_id).await
         }
+        Task::UpdateUserInfoCron(_) => update_user_info_cron(channel, &pool).await,
         _ => return Ok(()),
     };
     match result {
         Ok(_) => info!("task {} handled successfully", task_name),
         Err(err) => error!("task {} was failed: {}", task_name, err),
     }
+    Ok(())
+}
+
+async fn update_user_info_cron(channel: Channel, pool: &sqlx::PgPool) -> drama::Result<()> {
+    let mut ids = sqlx::query(r#"SELECT id FROM "user" LIMIT 10"#).fetch(pool);
+
+    while let Some(row) = ids.try_next().await? {
+        let task = Task::UpdateUserInfo {
+            common: Default::default(),
+            user_id: row.try_get("id")?,
+        };
+        channel
+            .basic_publish(
+                "",
+                "hello",
+                BasicPublishOptions::default(),
+                bincode::serialize(&task)?,
+                BasicProperties::default().with_delivery_mode(2),
+            )
+            .await?
+            .await?;
+    }
+
     Ok(())
 }
 
