@@ -170,11 +170,9 @@ async fn refresh_token<'a>(
     )
     .bind(&user_id)
     .fetch_optional(pool)
-    .await?;
+    .await?
+    .ok_or_else(|| drama::Error::from(format!("refresh token is expired for user {}", user_id)))?;
 
-    let refresh_token = refresh_token.ok_or_else(|| {
-        drama::Error::from(format!("refresh token is expired for user {}", user_id))
-    })?;
     let body = format!(
         "grant_type=refresh_token&refresh_token={}",
         refresh_token.refresh_token
@@ -221,11 +219,11 @@ async fn refresh_token<'a>(
     Ok(access_token)
 }
 
-async fn update_user_subreddits(
+async fn get_actual_token<'a>(
     config: ConfigRef,
-    pool: &sqlx::PgPool,
-    user_id: String,
-) -> drama::Result<()> {
+    pool: &'a sqlx::PgPool,
+    user_id: &'a str,
+) -> drama::Result<AccessToken> {
     // TODO extract 5 minutes from interval
     let access_token = sqlx::query_as::<_, AccessToken>(
         r#"
@@ -235,14 +233,23 @@ async fn update_user_subreddits(
         LIMIT 1
         "#,
     )
-    .bind(&user_id)
+    .bind(user_id)
     .fetch_optional(pool)
     .await?;
 
     let access_token = match access_token {
         Some(token) => token,
-        None => refresh_token(config, pool, &user_id).await?,
+        None => refresh_token(config, pool, user_id).await?,
     };
+    Ok(access_token)
+}
+
+async fn update_user_subreddits(
+    config: ConfigRef,
+    pool: &sqlx::PgPool,
+    user_id: String,
+) -> drama::Result<()> {
+    let access_token = get_actual_token(config, pool, &user_id).await?;
 
     use drama::reddit::model::{Data, Listing, Subreddit};
 
