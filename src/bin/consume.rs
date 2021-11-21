@@ -7,6 +7,7 @@ use lapin::{
     options::*, types::FieldTable, BasicProperties, Channel, Connection, ConnectionProperties,
 };
 use log::{error, info};
+use reqwest::Client;
 use sqlx::Row;
 use std::time::Duration;
 use uuid::Uuid;
@@ -134,11 +135,98 @@ struct AccessToken {
     scope: String,
 }
 
+#[derive(serde::Deserialize, Debug, sqlx::FromRow)]
+struct RefreshToken {
+    // TODO created_at: String,
+    // TODO updated_at: String,
+    uuid: uuid::Uuid,
+    user_id: String,
+    refresh_token: String,
+    token_type: String,
+    scope: String,
+}
+
+#[derive(serde::Deserialize, Debug, sqlx::FromRow)]
+struct Token {
+    access_token: String,
+    refresh_token: String,
+    token_type: String,
+    expires_in: i32,
+    scope: String,
+}
+
+async fn refresh_token<'a>(
+    config: ConfigRef,
+    pool: &'a sqlx::PgPool,
+    user_id: &'a str,
+) -> drama::Result<AccessToken> {
+    let refresh_token = sqlx::query_as::<_, RefreshToken>(
+        r#"
+        SELECT * FROM refresh_token
+        WHERE user_id = $1 AND created_at + interval '1 year' > current_timestamp
+        ORDER BY created_at DESC
+        LIMIT 1
+        "#,
+    )
+    .bind(&user_id)
+    .fetch_optional(pool)
+    .await?;
+
+    let refresh_token = refresh_token.ok_or_else(|| {
+        drama::Error::from(format!("refresh token is expired for user {}", user_id))
+    })?;
+    let body = format!(
+        "grant_type=refresh_token&refresh_token={}",
+        refresh_token.refresh_token
+    );
+    let token: Token = Client::new()
+        .post("https://www.reddit.com/api/v1/access_token")
+        .basic_auth(&config.client_id, Some(&config.client_secret))
+        .body(body)
+        .send()
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
+
+    info!(
+        "refresh token didnt change: {}",
+        token.refresh_token == refresh_token.refresh_token
+    );
+
+    let access_token = AccessToken {
+        uuid: Uuid::new_v4(),
+        user_id: user_id.to_owned(),
+        access_token: token.access_token,
+        token_type: token.token_type,
+        expires_in: token.expires_in,
+        scope: token.scope,
+    };
+
+    let mut tx = pool.begin().await?;
+    sqlx::query(
+        r#"INSERT INTO access_token (uuid, user_id, access_token, token_type, expires_in, scope)
+          VALUES ($1, $2, $3, $4, $5, $6)"#,
+    )
+    .bind(&access_token.uuid)
+    .bind(&access_token.user_id)
+    .bind(&access_token.access_token)
+    .bind(&access_token.token_type)
+    .bind(&access_token.expires_in)
+    .bind(&access_token.scope)
+    .execute(&mut tx)
+    .await?;
+    tx.commit().await?;
+
+    Ok(access_token)
+}
+
 async fn update_user_subreddits(
     config: ConfigRef,
     pool: &sqlx::PgPool,
     user_id: String,
 ) -> drama::Result<()> {
+    // TODO extract 5 minutes from interval
     let access_token = sqlx::query_as::<_, AccessToken>(
         r#"
         SELECT * FROM access_token
@@ -151,13 +239,9 @@ async fn update_user_subreddits(
     .fetch_optional(pool)
     .await?;
 
-    // TODO check token is actual or get new with refresh token
     let access_token = match access_token {
         Some(token) => token,
-        None => {
-            info!("access token for user {} not found", &user_id);
-            return Ok(());
-        }
+        None => refresh_token(config, pool, &user_id).await?,
     };
 
     use drama::reddit::model::{Data, Listing, Subreddit};
