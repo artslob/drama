@@ -139,12 +139,17 @@ async fn update_user_subreddits(
     pool: &sqlx::PgPool,
     user_id: String,
 ) -> drama::Result<()> {
-    // TODO select newest token
-    let access_token =
-        sqlx::query_as::<_, AccessToken>("SELECT * FROM access_token WHERE user_id = $1")
-            .bind(&user_id)
-            .fetch_optional(pool)
-            .await?;
+    let access_token = sqlx::query_as::<_, AccessToken>(
+        r#"
+        SELECT * FROM access_token
+        WHERE user_id = $1 AND created_at + expires_in * interval '1 second' > current_timestamp
+        ORDER BY created_at DESC
+        LIMIT 1
+        "#,
+    )
+    .bind(&user_id)
+    .fetch_optional(pool)
+    .await?;
 
     // TODO check token is actual or get new with refresh token
     let access_token = match access_token {
