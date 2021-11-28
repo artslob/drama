@@ -91,12 +91,60 @@ async fn handle_task(
         Data::UpdateUserSubreddits { user_id } => {
             update_user_subreddits(config, &pool, user_id).await
         }
-        _ => return Ok(()),
+        Data::UpdateUserInfo { user_id } => update_user_info(config, &pool, user_id).await,
     };
     match result {
         Ok(_) => info!("task {} handled successfully", task_name),
         Err(err) => error!("task {} was failed: {}", task_name, err),
     }
+    Ok(())
+}
+
+async fn update_user_info(
+    config: ConfigRef,
+    pool: &sqlx::PgPool,
+    user_id: String,
+) -> drama::Result<()> {
+    let access_token = get_actual_token(config, pool, &user_id).await?;
+
+    let user: User = reqwest::Client::builder()
+        .user_agent(config.user_agent.to_string())
+        .build()?
+        .get("https://oauth.reddit.com/api/v1/me")
+        .bearer_auth(&access_token.access_token)
+        .send()
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
+
+    let mut tx = pool.begin().await?;
+    sqlx::query(
+        r#"UPDATE "user" SET accept_followers = $1, has_subscribed = $2, has_verified_email = $3,
+        hide_from_robots = $4, is_employee = $5, is_gold = $6, is_mod = $7, name = $8,
+        total_karma = $9, link_karma = $10, awardee_karma = $11, awarder_karma = $12,
+        comment_karma = $13, verified = $14
+        WHERE id = $15"#,
+    )
+    .bind(user.accept_followers)
+    .bind(user.has_subscribed)
+    .bind(user.has_verified_email)
+    .bind(user.hide_from_robots)
+    .bind(user.is_employee)
+    .bind(user.is_gold)
+    .bind(user.is_mod)
+    .bind(user.name)
+    .bind(user.total_karma)
+    .bind(user.link_karma)
+    .bind(user.awardee_karma)
+    .bind(user.awarder_karma)
+    .bind(user.comment_karma)
+    .bind(user.verified)
+    .bind(user.id)
+    .execute(&mut tx)
+    .await?;
+    tx.commit().await?;
+
     Ok(())
 }
 
