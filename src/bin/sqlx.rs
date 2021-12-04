@@ -85,7 +85,7 @@ async fn main() -> Result<(), drama::Error> {
     let pool = PgPoolOptions::new()
         .max_connections(5)
         .connect_timeout(Duration::from_secs(5))
-        .connect("postgres://drama_user:drama_pass@localhost:5932/drama_db")
+        .connect(&config.postgres_url)
         .await?;
 
     let row: (i64,) = sqlx::query_as("SELECT $1")

@@ -115,7 +115,7 @@ async fn main() -> drama::Result<()> {
     let pool = sqlx::postgres::PgPoolOptions::new()
         .max_connections(5)
         .connect_timeout(Duration::from_secs(5))
-        .connect("postgres://drama_user:drama_pass@localhost:5932/drama_db")
+        .connect(&config.postgres_url)
         .await?;
 
     let factory = move || {

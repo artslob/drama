@@ -28,10 +28,11 @@ async fn main() -> drama::Result<()> {
     )
     .await?;
 
+    // TODO move to config others postgres options
     let pool = sqlx::postgres::PgPoolOptions::new()
         .max_connections(5)
         .connect_timeout(Duration::from_secs(5))
-        .connect("postgres://drama_user:drama_pass@localhost:5932/drama_db")
+        .connect(&config.postgres_url)
         .await?;
 
     let channel = conn.create_channel().await?;

@@ -12,6 +12,7 @@ pub struct Config {
     pub access_token_url: String,
     pub api_base_url: String,
     pub rabbitmq_url: String,
+    pub postgres_url: String,
 }
 
 impl Config {
