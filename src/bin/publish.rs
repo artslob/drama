@@ -1,11 +1,11 @@
-use std::time::Duration;
-
+use drama::queue::Queue;
 use drama::task::{Cron, Data, Task};
 use lapin::{
     options::*, publisher_confirm::Confirmation, types::FieldTable, BasicProperties, Channel,
     Connection, ConnectionProperties,
 };
 use log::info;
+use std::time::Duration;
 use strum::IntoEnumIterator;
 
 #[tokio::main]
@@ -28,7 +28,7 @@ async fn main() -> drama::Result<()> {
 
     let queue = channel
         .queue_declare(
-            "hello",
+            Queue::Default.name(),
             QueueDeclareOptions {
                 durable: true,
                 ..Default::default()
@@ -61,7 +61,7 @@ async fn send_task(channel: Channel, cron: Cron) -> drama::Result<()> {
         let confirm = channel
             .basic_publish(
                 "",
-                "hello",
+                Queue::Default.name(),
                 BasicPublishOptions::default(),
                 bincode::serialize(&task)?,
                 properties,

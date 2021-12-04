@@ -1,4 +1,5 @@
 pub mod config;
+pub mod queue;
 pub mod reddit;
 pub mod task;
 

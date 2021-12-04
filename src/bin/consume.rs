@@ -1,4 +1,5 @@
 use drama::config::{Config, ConfigRef};
+use drama::queue::Queue;
 use drama::reddit::model::User;
 use drama::task::{Cron, Data, Task, TaskCommon};
 use futures::TryStreamExt;
@@ -39,7 +40,7 @@ async fn main() -> drama::Result<()> {
 
     let queue = channel
         .queue_declare(
-            "hello",
+            Queue::Default.name(),
             QueueDeclareOptions {
                 durable: true,
                 ..Default::default()
@@ -52,7 +53,7 @@ async fn main() -> drama::Result<()> {
 
     let mut consumer = channel
         .basic_consume(
-            "hello",
+            Queue::Default.name(),
             "my_consumer",
             BasicConsumeOptions::default(),
             FieldTable::default(),
@@ -161,7 +162,7 @@ async fn update_user_info_cron(channel: Channel, pool: &sqlx::PgPool) -> drama::
         channel
             .basic_publish(
                 "",
-                "hello",
+                Queue::Default.name(),
                 BasicPublishOptions::default(),
                 bincode::serialize(&task)?,
                 BasicProperties::default().with_delivery_mode(2),
@@ -360,7 +361,7 @@ async fn update_user_subreddits_cron(channel: Channel, pool: &sqlx::PgPool) -> d
         channel
             .basic_publish(
                 "",
-                "hello",
+                Queue::Default.name(),
                 BasicPublishOptions::default(),
                 bincode::serialize(&task)?,
                 BasicProperties::default().with_delivery_mode(2),
@@ -486,7 +487,7 @@ async fn create_user_cron(channel: Channel, pool: &sqlx::PgPool) -> drama::Resul
         channel
             .basic_publish(
                 "",
-                "hello",
+                Queue::Default.name(),
                 BasicPublishOptions::default(),
                 bincode::serialize(&task)?,
                 BasicProperties::default().with_delivery_mode(2),
