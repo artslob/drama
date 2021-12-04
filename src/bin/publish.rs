@@ -1,3 +1,4 @@
+use drama::config::Config;
 use drama::queue::Queue;
 use drama::task::{Cron, Data, Task};
 use lapin::{
@@ -15,10 +16,10 @@ async fn main() -> drama::Result<()> {
     }
     env_logger::init();
 
-    let addr = std::env::var("AMQP_ADDR").unwrap_or_else(|_| "amqp://127.0.0.1:5672/%2f".into());
+    let config = Config::from_env()?.permanent();
 
     let conn = Connection::connect(
-        &addr,
+        &config.rabbitmq_url,
         ConnectionProperties::default().with_default_executor(8),
     )
     .await?;

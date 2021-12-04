@@ -11,6 +11,7 @@ pub struct Config {
     pub user_agent: UserAgent,
     pub access_token_url: String,
     pub api_base_url: String,
+    pub rabbitmq_url: String,
 }
 
 impl Config {

@@ -1,25 +1,25 @@
 use std::thread::sleep;
 use std::time::Duration;
 
+use drama::config::Config;
 use futures_util::stream::StreamExt;
 use lapin::{
     options::*, publisher_confirm::Confirmation, types::FieldTable, BasicProperties, Connection,
-    ConnectionProperties, Result,
+    ConnectionProperties,
 };
 use log::info;
 
-fn main() -> Result<()> {
+fn main() -> drama::Result<()> {
     if std::env::var("RUST_LOG").is_err() {
         std::env::set_var("RUST_LOG", "info");
     }
-
     env_logger::init();
 
-    let addr = std::env::var("AMQP_ADDR").unwrap_or_else(|_| "amqp://127.0.0.1:5672/%2f".into());
+    let config = Config::from_env()?.permanent();
 
     async_global_executor::block_on(async {
         let conn = Connection::connect(
-            &addr,
+            &config.rabbitmq_url,
             ConnectionProperties::default().with_default_executor(8),
         )
         .await?;

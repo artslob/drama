@@ -8,3 +8,4 @@ user_agent:
   reddit_username: artslob-api-user
 access_token_url: "https://www.reddit.com/api/v1/access_token"
 api_base_url: "https://oauth.reddit.com/"
+rabbitmq_url: "amqp://127.0.0.1:5672//"
