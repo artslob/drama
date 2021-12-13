@@ -52,10 +52,6 @@ async fn insert_token(pool: &sqlx::PgPool, token: Token) -> Result<RegistrationT
     Ok(token)
 }
 
-fn _create_internal_error() -> aw::error::InternalError<&'static str> {
-    aw::error::InternalError::new("", http::StatusCode::INTERNAL_SERVER_ERROR)
-}
-
 async fn request_and_insert_token(
     config: aw::web::Data<drama::config::Config>,
     pool: aw::web::Data<sqlx::PgPool>,

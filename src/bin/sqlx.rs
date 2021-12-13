@@ -3,25 +3,6 @@ use drama::reddit::model::User;
 use sqlx::postgres::PgPoolOptions;
 use std::time::Duration;
 
-async fn _insert_token(pool: &sqlx::PgPool) -> Result<RegistrationToken, sqlx::Error> {
-    let mut tx = pool.begin().await?;
-    let token: RegistrationToken = sqlx::query_as::<_, RegistrationToken>(
-        "INSERT INTO registration_token (uuid, access_token, refresh_token, token_type, \
-    expires_in, scope) VALUES ($1, $2, $3, $4, $5, $6)  \
-    RETURNING access_token, refresh_token, token_type, expires_in, scope",
-    )
-    .bind(uuid::Uuid::new_v4())
-    .bind("access")
-    .bind("refresh")
-    .bind("token type")
-    .bind(1i32)
-    .bind("scope")
-    .fetch_one(&mut tx)
-    .await?;
-    tx.rollback().await?;
-    Ok(token)
-}
-
 async fn create_user(
     pool: &sqlx::PgPool,
     config: &drama::config::Config,
