@@ -86,3 +86,12 @@ pub struct Data<T> {
     pub data: T,
     pub kind: String,
 }
+
+#[derive(Deserialize, Debug)]
+pub struct Token {
+    pub access_token: String,
+    pub refresh_token: String,
+    pub token_type: String,
+    pub expires_in: i32,
+    pub scope: String,
+}

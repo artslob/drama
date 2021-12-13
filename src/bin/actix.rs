@@ -1,4 +1,6 @@
 use actix_web as aw;
+use drama::model::RegistrationToken;
+use drama::reddit::model::Token;
 use reqwest::Client as HttpClient;
 use std::time::Duration;
 
@@ -31,21 +33,12 @@ struct CallbackParams {
     state: String,
 }
 
-#[derive(serde::Deserialize, Debug, sqlx::FromRow)]
-struct Token {
-    access_token: String,
-    refresh_token: String,
-    token_type: String,
-    expires_in: i32,
-    scope: String,
-}
-
-async fn insert_token(pool: &sqlx::PgPool, token: Token) -> Result<Token, sqlx::Error> {
+async fn insert_token(pool: &sqlx::PgPool, token: Token) -> Result<RegistrationToken, sqlx::Error> {
     let mut tx = pool.begin().await?;
-    let token: Token = sqlx::query_as::<_, Token>(
+    let token: RegistrationToken = sqlx::query_as::<_, RegistrationToken>(
         "INSERT INTO registration_token (uuid, access_token, refresh_token, token_type, \
     expires_in, scope) VALUES ($1, $2, $3, $4, $5, $6)  \
-    RETURNING access_token, refresh_token, token_type, expires_in, scope",
+    RETURNING uuid, access_token, refresh_token, token_type, expires_in, scope",
     )
     .bind(uuid::Uuid::new_v4())
     .bind(token.access_token)
@@ -67,7 +60,7 @@ async fn request_and_insert_token(
     config: aw::web::Data<drama::config::Config>,
     pool: aw::web::Data<sqlx::PgPool>,
     body: String,
-) -> drama::Result<Token> {
+) -> drama::Result<RegistrationToken> {
     let token: Token = HttpClient::new()
         .post(&config.access_token_url)
         .basic_auth(&config.client_id, Some(&config.client_secret))
