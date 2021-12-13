@@ -1,5 +1,7 @@
 use drama::config::{Config, ConfigRef};
+use drama::model::{AccessToken, RefreshToken, RegistrationToken};
 use drama::queue::Queue;
+use drama::reddit::model::Token;
 use drama::reddit::model::User;
 use drama::task::{Cron, Data, Task, TaskCommon};
 use futures::TryStreamExt;
@@ -171,36 +173,6 @@ async fn update_user_info_cron(channel: Channel, pool: &sqlx::PgPool) -> drama::
     }
 
     Ok(())
-}
-
-#[derive(Debug, sqlx::FromRow)]
-struct AccessToken {
-    uuid: Uuid,
-    user_id: String,
-    access_token: String,
-    token_type: String,
-    expires_in: i32,
-    scope: String,
-}
-
-#[derive(serde::Deserialize, Debug, sqlx::FromRow)]
-struct RefreshToken {
-    // TODO created_at: String,
-    // TODO updated_at: String,
-    uuid: uuid::Uuid,
-    user_id: String,
-    refresh_token: String,
-    token_type: String,
-    scope: String,
-}
-
-#[derive(serde::Deserialize, Debug, sqlx::FromRow)]
-struct Token {
-    access_token: String,
-    refresh_token: String,
-    token_type: String,
-    expires_in: i32,
-    scope: String,
 }
 
 async fn refresh_token<'a>(
@@ -460,16 +432,6 @@ async fn create_user(
     .await?;
     tx.commit().await?;
     Ok(())
-}
-
-#[derive(Debug, sqlx::FromRow)]
-struct RegistrationToken {
-    uuid: Uuid,
-    access_token: String,
-    refresh_token: String,
-    token_type: String,
-    expires_in: i32,
-    scope: String,
 }
 
 async fn create_user_cron(channel: Channel, pool: &sqlx::PgPool) -> drama::Result<()> {
