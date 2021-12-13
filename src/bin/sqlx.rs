@@ -1,19 +1,11 @@
+use drama::model::RegistrationToken;
 use drama::reddit::model::User;
 use sqlx::postgres::PgPoolOptions;
 use std::time::Duration;
 
-#[derive(serde::Deserialize, sqlx::FromRow, Debug)]
-struct Token {
-    access_token: String,
-    refresh_token: String,
-    token_type: String,
-    expires_in: i32,
-    scope: String,
-}
-
-async fn _insert_token(pool: &sqlx::PgPool) -> Result<Token, sqlx::Error> {
+async fn _insert_token(pool: &sqlx::PgPool) -> Result<RegistrationToken, sqlx::Error> {
     let mut tx = pool.begin().await?;
-    let token: Token = sqlx::query_as::<_, Token>(
+    let token: RegistrationToken = sqlx::query_as::<_, RegistrationToken>(
         "INSERT INTO registration_token (uuid, access_token, refresh_token, token_type, \
     expires_in, scope) VALUES ($1, $2, $3, $4, $5, $6)  \
     RETURNING access_token, refresh_token, token_type, expires_in, scope",
@@ -34,7 +26,7 @@ async fn create_user(
     pool: &sqlx::PgPool,
     config: &drama::config::Config,
 ) -> Result<(), drama::Error> {
-    let token = sqlx::query_as::<_, Token>("SELECT * FROM token LIMIT 1")
+    let token = sqlx::query_as::<_, RegistrationToken>("SELECT * FROM registration_token LIMIT 1")
         .fetch_one(pool)
         .await
         .map_err(|_| drama::Error::from("could not select token"))?;

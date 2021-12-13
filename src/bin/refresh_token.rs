@@ -1,13 +1,5 @@
+use drama::reddit::model::Token;
 use reqwest::Client;
-
-#[derive(serde::Deserialize, Debug, sqlx::FromRow)]
-struct Token {
-    access_token: String,
-    refresh_token: String,
-    token_type: String,
-    expires_in: i32,
-    scope: String,
-}
 
 #[tokio::main]
 async fn main() -> drama::Result<()> {
