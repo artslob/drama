@@ -70,3 +70,14 @@ impl Display for UserAgent {
         )
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn example_file_is_working() -> crate::Result<()> {
+        Config::from_file("configs/drama-config-example.yml")?;
+        Ok(())
+    }
+}
