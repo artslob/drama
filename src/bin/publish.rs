@@ -58,14 +58,13 @@ async fn send_task(channel: Channel, cron: Cron) -> drama::Result<()> {
             data: Data::Cron(cron),
         };
         info!("sending task task {:?}", task);
-        let properties = BasicProperties::default().with_delivery_mode(2);
         let confirm = channel
             .basic_publish(
                 "",
                 Queue::Default.name(),
                 BasicPublishOptions::default(),
                 bincode::serialize(&task)?,
-                properties,
+                BasicProperties::default().with_delivery_mode(2),
             )
             .await?
             .await?;
