@@ -177,7 +177,9 @@ async fn refresh_token<'a>(
     let refresh_token = sqlx::query_as::<_, RefreshToken>(
         r#"
         SELECT * FROM refresh_token
-        WHERE user_id = $1 AND created_at + interval '1 year' > current_timestamp
+        WHERE
+            user_id = $1
+            AND created_at + interval '1 year' - interval '5 minutes' > current_timestamp
         ORDER BY created_at DESC
         LIMIT 1
         "#,
@@ -238,11 +240,12 @@ async fn get_actual_token<'a>(
     pool: &'a sqlx::PgPool,
     user_id: &'a str,
 ) -> drama::Result<AccessToken> {
-    // TODO extract 5 minutes from interval
     let access_token = sqlx::query_as::<_, AccessToken>(
         r#"
         SELECT * FROM access_token
-        WHERE user_id = $1 AND created_at + expires_in * interval '1 second' > current_timestamp
+        WHERE
+            user_id = $1
+            AND created_at + expires_in * interval '1 second' - interval '5 minutes' > current_timestamp
         ORDER BY created_at DESC
         LIMIT 1
         "#,
@@ -360,6 +363,7 @@ async fn create_user(
             return Ok(());
         }
     };
+    // TODO check if token is expired?
     let user: User = reqwest::Client::builder()
         .user_agent(config.user_agent.to_string())
         .build()?
