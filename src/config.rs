@@ -12,7 +12,14 @@ pub struct Config {
     pub access_token_url: String,
     pub api_base_url: String,
     pub rabbitmq_url: String,
-    pub postgres_url: String,
+    pub postgres: Postgres,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct Postgres {
+    pub url: String,
+    pub max_connections: u32,
+    pub connect_timeout_secs: u64,
 }
 
 impl Config {

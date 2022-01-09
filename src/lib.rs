@@ -1,5 +1,6 @@
 pub mod config;
 pub mod model;
+pub mod pg;
 pub mod queue;
 pub mod reddit;
 pub mod task;

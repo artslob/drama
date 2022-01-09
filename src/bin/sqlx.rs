@@ -1,7 +1,5 @@
 use drama::model::RegistrationToken;
 use drama::reddit::model::User;
-use sqlx::postgres::PgPoolOptions;
-use std::time::Duration;
 
 async fn create_user(
     pool: &sqlx::PgPool,
@@ -55,11 +53,7 @@ async fn create_user(
 async fn main() -> Result<(), drama::Error> {
     let config = drama::config::Config::from_env()?;
 
-    let pool = PgPoolOptions::new()
-        .max_connections(5)
-        .connect_timeout(Duration::from_secs(5))
-        .connect(&config.postgres_url)
-        .await?;
+    let pool = drama::pg::create_pg_pool(&config).await?;
 
     let row: (i64,) = sqlx::query_as("SELECT $1")
         .bind(150_i64)

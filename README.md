@@ -20,6 +20,8 @@ Copy and edit config files:
 To export env variables:
 ```shell
 export $(cat .env.example | xargs)
+# or
+. include-env.sh
 ```
 To install sqlx-cli:
 ```shell

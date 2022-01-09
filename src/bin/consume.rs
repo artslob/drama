@@ -12,7 +12,6 @@ use lapin::{
 use log::{error, info};
 use reqwest::Client;
 use sqlx::Row;
-use std::time::Duration;
 use uuid::Uuid;
 
 #[tokio::main]
@@ -30,12 +29,7 @@ async fn main() -> drama::Result<()> {
     )
     .await?;
 
-    // TODO move to config others postgres options
-    let pool = sqlx::postgres::PgPoolOptions::new()
-        .max_connections(5)
-        .connect_timeout(Duration::from_secs(5))
-        .connect(&config.postgres_url)
-        .await?;
+    let pool = drama::pg::create_pg_pool(config).await?;
 
     let channel = conn.create_channel().await?;
 

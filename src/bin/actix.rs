@@ -2,7 +2,6 @@ use actix_web as aw;
 use drama::model::RegistrationToken;
 use drama::reddit::model::Token;
 use reqwest::Client as HttpClient;
-use std::time::Duration;
 
 #[aw::get("/")]
 async fn start(config: aw::web::Data<drama::config::Config>) -> aw::HttpResponse {
@@ -101,11 +100,7 @@ async fn callback(
 async fn main() -> drama::Result<()> {
     let config = drama::config::Config::from_env()?;
 
-    let pool = sqlx::postgres::PgPoolOptions::new()
-        .max_connections(5)
-        .connect_timeout(Duration::from_secs(5))
-        .connect(&config.postgres_url)
-        .await?;
+    let pool = drama::pg::create_pg_pool(&config).await?;
 
     let factory = move || {
         aw::App::new()
