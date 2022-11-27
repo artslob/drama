@@ -25,7 +25,8 @@ public class Start {
                 """
                         https://www.reddit.com/api/v1/authorize?\
                         client_id=%s\
-                        &response_type=code&state=%s\
+                        &response_type=code\
+                        &state=%s\
                         &redirect_uri=%s\
                         &duration=permanent\
                         &scope=%s\
