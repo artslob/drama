@@ -1,11 +1,19 @@
 package com.github.artslob.drama.controllers;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class Start {
+    @Autowired
+    private RestTemplateBuilder restTemplateBuilder;
+
     @GetMapping("/")
     public String index() {
         var scope = "identity,history,mysubreddits,read";
@@ -44,6 +52,18 @@ public class Start {
         }
         System.out.println(code);
         System.out.println(state);
+        var url = "https://www.reddit.com/api/v1/access_token";
+        var redirect_uri = "http://localhost:8080/callback";
+        var body = String.format("grant_type=authorization_code&code=%s&redirect_uri=%s", code, redirect_uri);
+        // TODO read password from config
+        var password = "...";
+        var restTemplates = restTemplateBuilder.basicAuthentication("giud55ItUqIbi591qrFl_A", password).build();
+        var headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        headers.add(HttpHeaders.USER_AGENT, "server:com.github.artslob.drama:v0.0.1 (by /u/artslob-api-user)");
+        HttpEntity<String> entity = new HttpEntity<>(body, headers);
+        var responseEntity = restTemplates.postForEntity(url, entity, String.class);
+        System.out.println(responseEntity.getBody());
         return "success";
     }
 }
