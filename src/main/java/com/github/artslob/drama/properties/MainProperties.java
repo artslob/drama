@@ -9,4 +9,6 @@ public class MainProperties {
     public String reddit_app_id;
     @Value("${reddit_app_password}")
     public String reddit_app_password;
+    @Value("${redirect_uri}")
+    public String redirect_uri;
 }
