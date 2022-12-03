@@ -1,5 +1,6 @@
 package com.github.artslob.drama.controllers;
 
+import com.github.artslob.drama.domain.TokensResponse;
 import com.github.artslob.drama.properties.MainProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -67,7 +68,7 @@ public class Start {
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         headers.add(HttpHeaders.USER_AGENT, "server:com.github.artslob.drama:v0.0.1 (by /u/artslob-api-user)");
         HttpEntity<String> entity = new HttpEntity<>(body, headers);
-        var responseEntity = restTemplates.postForEntity(url, entity, String.class);
+        var responseEntity = restTemplates.postForEntity(url, entity, TokensResponse.class);
         System.out.println(responseEntity.getBody());
         return "success";
     }
