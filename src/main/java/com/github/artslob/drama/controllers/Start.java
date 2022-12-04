@@ -1,7 +1,9 @@
 package com.github.artslob.drama.controllers;
 
 import com.github.artslob.drama.domain.TokensResponse;
+import com.github.artslob.drama.entity.AccessToken;
 import com.github.artslob.drama.properties.MainProperties;
+import com.github.artslob.drama.repository.AccessTokenRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpEntity;
@@ -17,6 +19,8 @@ public class Start {
     private RestTemplateBuilder restTemplateBuilder;
     @Autowired
     private MainProperties properties;
+    @Autowired
+    private AccessTokenRepository accessTokenRepository;
 
     @GetMapping("/")
     public String index() {
@@ -69,7 +73,15 @@ public class Start {
         headers.add(HttpHeaders.USER_AGENT, "server:com.github.artslob.drama:v0.0.1 (by /u/artslob-api-user)");
         HttpEntity<String> entity = new HttpEntity<>(body, headers);
         var responseEntity = restTemplates.postForEntity(url, entity, TokensResponse.class);
-        System.out.println(responseEntity.getBody());
+        // TODO check for 200
+        var response = responseEntity.getBody();
+        System.out.println(response);
+        var token = new AccessToken();
+        token.setAccessToken(response.access_token());
+        token.setTokenType(response.token_type());
+        token.setScope(response.scope());
+        token.setExpiresIn(response.expires_in());
+        accessTokenRepository.save(token);
         return "success";
     }
 }
