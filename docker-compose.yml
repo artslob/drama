@@ -1,0 +1,12 @@
+version: '3.7'
+
+services:
+  db:
+    image: 'postgres:11.5'
+    ports:
+      - "5932:5432"
+    environment:
+      POSTGRES_DB: "drama_db"
+      POSTGRES_USER: "drama_user"
+      POSTGRES_PASSWORD: "drama_pass"
+    restart: on-failure

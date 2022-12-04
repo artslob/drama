@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.0.0'
 	id 'io.spring.dependency-management' version '1.1.0'
+	id 'org.flywaydb.flyway' version '9.8.1'
 }
 
 group = 'com.github.artslob'
@@ -15,8 +16,17 @@ repositories {
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	implementation group: 'org.postgresql', name: 'postgresql', version: '42.1.4'
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+flyway {
+	url = 'jdbc:postgresql://localhost:5932/drama_db'
+	user = 'drama_user'
+	password = 'drama_pass'
+	defaultSchema = 'public'
+	locations = ['filesystem:src/main/resources/db_migrations']
 }
