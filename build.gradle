@@ -25,6 +25,7 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
+// TODO move secrets to separate file
 flyway {
 	url = 'jdbc:postgresql://localhost:5932/drama_db'
 	user = 'drama_user'
