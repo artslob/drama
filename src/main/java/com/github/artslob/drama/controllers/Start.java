@@ -80,16 +80,18 @@ public class Start {
         // TODO check for 200
         var response = responseEntity.getBody();
         System.out.println(response);
-        var token = new AccessToken();
-        token.setAccessToken(response.access_token());
-        token.setTokenType(response.token_type());
-        token.setScope(response.scope());
-        token.setExpiresIn(response.expires_in());
+        var token = new AccessToken(
+                response.access_token(),
+                response.token_type(),
+                response.expires_in(),
+                response.scope()
+        );
         accessTokenRepository.save(token);
-        var refreshToken = new RefreshToken();
-        refreshToken.setRefreshToken(response.refresh_token());
-        refreshToken.setTokenType(response.token_type());
-        refreshToken.setScope(response.scope());
+        var refreshToken = new RefreshToken(
+                response.refresh_token(),
+                response.token_type(),
+                response.scope()
+        );
         refreshTokenRepository.save(refreshToken);
         return "success";
     }
