@@ -1,11 +1,14 @@
 package com.github.artslob.drama.controllers;
 
 import com.github.artslob.drama.domain.TokensResponse;
+import com.github.artslob.drama.domain.UserIdentityResponse;
 import com.github.artslob.drama.entity.AccessToken;
 import com.github.artslob.drama.entity.RefreshToken;
+import com.github.artslob.drama.entity.User;
 import com.github.artslob.drama.properties.MainProperties;
 import com.github.artslob.drama.repository.AccessTokenRepository;
 import com.github.artslob.drama.repository.RefreshTokenRepository;
+import com.github.artslob.drama.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpEntity;
@@ -26,6 +29,8 @@ public class Start {
     private AccessTokenRepository accessTokenRepository;
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
+    @Autowired
+    private UserRepository userRepository;
 
     @GetMapping("/")
     public String index() {
@@ -55,6 +60,7 @@ public class Start {
             @RequestParam(required = false) String code,
             @RequestParam(required = false) String state
     ) {
+        // TODO use transactions
         if (error != null) {
             return String.format("error occurred :( : %s", error);
         }
@@ -100,13 +106,31 @@ public class Start {
             headers.add(HttpHeaders.USER_AGENT, "server:com.github.artslob.drama:v0.0.1 (by /u/artslob-api-user)");
             HttpEntity<String> userRequest = new HttpEntity<>(null, headers);
             restTemplates = restTemplateBuilder.build();
-            var userString = restTemplates.exchange(
+            var userResponse = restTemplates.exchange(
                     "https://oauth.reddit.com/api/v1/me",
                     HttpMethod.GET,
                     userRequest,
-                    String.class
-            );
-            System.out.println(userString);
+                    UserIdentityResponse.class
+            ).getBody();
+            System.out.println(userResponse);
+            var userEntity = new User();
+            userEntity.setId(userResponse.id());
+            userEntity.setAccept_followers(userResponse.accept_followers());
+            userEntity.setHas_subscribed(userResponse.has_subscribed());
+            userEntity.setHas_verified_email(userResponse.has_verified_email());
+            userEntity.setHide_from_robots(userResponse.hide_from_robots());
+            userEntity.set_employee(userResponse.is_employee());
+            userEntity.set_gold(userResponse.is_gold());
+            userEntity.set_mod(userResponse.is_mod());
+            userEntity.setName(userResponse.name());
+            userEntity.setTotal_karma(userResponse.total_karma());
+            userEntity.setLink_karma(userResponse.link_karma());
+            userEntity.setAwardee_karma(userResponse.awardee_karma());
+            userEntity.setAwarder_karma(userResponse.awarder_karma());
+            userEntity.setComment_karma(userResponse.comment_karma());
+            userEntity.setVerified(userResponse.verified());
+            // TODO use create or update
+            userRepository.save(userEntity);
         }
         return "success";
     }
