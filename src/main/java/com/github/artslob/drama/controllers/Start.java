@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -93,6 +94,20 @@ public class Start {
                 response.scope()
         );
         refreshTokenRepository.save(refreshToken);
+        {
+            headers = new HttpHeaders();
+            headers.add(HttpHeaders.AUTHORIZATION, String.format("bearer %s", token.getAccessToken()));
+            headers.add(HttpHeaders.USER_AGENT, "server:com.github.artslob.drama:v0.0.1 (by /u/artslob-api-user)");
+            HttpEntity<String> userRequest = new HttpEntity<>(null, headers);
+            restTemplates = restTemplateBuilder.build();
+            var userString = restTemplates.exchange(
+                    "https://oauth.reddit.com/api/v1/me",
+                    HttpMethod.GET,
+                    userRequest,
+                    String.class
+            );
+            System.out.println(userString);
+        }
         return "success";
     }
 }
