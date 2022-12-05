@@ -2,8 +2,10 @@ package com.github.artslob.drama.controllers;
 
 import com.github.artslob.drama.domain.TokensResponse;
 import com.github.artslob.drama.entity.AccessToken;
+import com.github.artslob.drama.entity.RefreshToken;
 import com.github.artslob.drama.properties.MainProperties;
 import com.github.artslob.drama.repository.AccessTokenRepository;
+import com.github.artslob.drama.repository.RefreshTokenRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpEntity;
@@ -21,6 +23,8 @@ public class Start {
     private MainProperties properties;
     @Autowired
     private AccessTokenRepository accessTokenRepository;
+    @Autowired
+    private RefreshTokenRepository refreshTokenRepository;
 
     @GetMapping("/")
     public String index() {
@@ -82,6 +86,11 @@ public class Start {
         token.setScope(response.scope());
         token.setExpiresIn(response.expires_in());
         accessTokenRepository.save(token);
+        var refreshToken = new RefreshToken();
+        refreshToken.setRefreshToken(response.refresh_token());
+        refreshToken.setTokenType(response.token_type());
+        refreshToken.setScope(response.scope());
+        refreshTokenRepository.save(refreshToken);
         return "success";
     }
 }
