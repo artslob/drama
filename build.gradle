@@ -26,8 +26,6 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
-// TODO automatic code formatter
-
 // TODO move secrets to separate file
 flyway {
     url = 'jdbc:postgresql://localhost:5932/drama_db'
@@ -46,6 +44,10 @@ spotless {
         trimTrailingWhitespace()
         indentWithSpaces()
         endWithNewline()
+    }
+    format 'yaml', {
+        target '**/*.yaml', '**/*.yml'
+        prettier('2.8.1')
     }
     java {
         importOrder()

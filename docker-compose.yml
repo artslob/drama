@@ -1,8 +1,8 @@
-version: '3.7'
+version: "3.7"
 
 services:
   db:
-    image: 'postgres:11.5'
+    image: "postgres:11.5"
     ports:
       - "5932:5432"
     environment:
