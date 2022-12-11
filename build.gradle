@@ -1,9 +1,10 @@
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '3.0.0'
-	id 'io.spring.dependency-management' version '1.1.0'
-	id 'org.flywaydb.flyway' version '9.8.1'
-	id 'io.freefair.lombok' version '6.6'
+    id 'java'
+    id 'org.springframework.boot' version '3.0.0'
+    id 'io.spring.dependency-management' version '1.1.0'
+    id 'org.flywaydb.flyway' version '9.8.1'
+    id 'io.freefair.lombok' version '6.6'
+    id 'com.diffplug.spotless' version '6.12.0'
 }
 
 group = 'com.github.artslob'
@@ -11,27 +12,45 @@ version = '0.0.1-SNAPSHOT'
 sourceCompatibility = '17'
 
 repositories {
-	mavenCentral()
+    mavenCentral()
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	implementation 'org.postgresql:postgresql:42.5.1'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    implementation 'org.postgresql:postgresql:42.5.1'
 }
 
 tasks.named('test') {
-	useJUnitPlatform()
+    useJUnitPlatform()
 }
 
 // TODO automatic code formatter
 
 // TODO move secrets to separate file
 flyway {
-	url = 'jdbc:postgresql://localhost:5932/drama_db'
-	user = 'drama_user'
-	password = 'drama_pass'
-	defaultSchema = 'public'
-	locations = ['filesystem:src/main/resources/db_migrations']
+    url = 'jdbc:postgresql://localhost:5932/drama_db'
+    user = 'drama_user'
+    password = 'drama_pass'
+    defaultSchema = 'public'
+    locations = ['filesystem:src/main/resources/db_migrations']
+}
+
+spotless {
+    format 'misc', {
+        // define the files to apply `misc` to
+        target '*.gradle', '*.md', '.gitignore'
+
+        // define the steps to apply to those files
+        trimTrailingWhitespace()
+        indentWithSpaces()
+        endWithNewline()
+    }
+    java {
+        importOrder()
+        removeUnusedImports()
+        palantirJavaFormat('2.28.0')
+        formatAnnotations()  // fix formatting of type annotations
+    }
 }

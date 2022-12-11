@@ -23,12 +23,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class Start {
     @Autowired
     private RestTemplateBuilder restTemplateBuilder;
+
     @Autowired
     private MainProperties properties;
+
     @Autowired
     private AccessTokenRepository accessTokenRepository;
+
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
+
     @Autowired
     private UserRepository userRepository;
 
@@ -46,11 +50,7 @@ public class Start {
                 &duration=permanent\
                 &scope=%s\
                 """,
-                properties.reddit_app_id,
-                state,
-                properties.redirect_uri,
-                scope
-        );
+                properties.reddit_app_id, state, properties.redirect_uri, scope);
         return String.format("<a href=\"%s\">go here</a>", url);
     }
 
@@ -58,8 +58,7 @@ public class Start {
     public String callback(
             @RequestParam(required = false) String error,
             @RequestParam(required = false) String code,
-            @RequestParam(required = false) String state
-    ) {
+            @RequestParam(required = false) String state) {
         // TODO use transactions
         if (error != null) {
             return String.format("error occurred :( : %s", error);
@@ -70,15 +69,11 @@ public class Start {
         System.out.println(code);
         System.out.println(state);
         var url = "https://www.reddit.com/api/v1/access_token";
-        var body = String.format(
-                "grant_type=authorization_code&code=%s&redirect_uri=%s",
-                code,
-                properties.redirect_uri
-        );
-        var restTemplates = restTemplateBuilder.basicAuthentication(
-                properties.reddit_app_id,
-                properties.reddit_app_password
-        ).build();
+        var body =
+                String.format("grant_type=authorization_code&code=%s&redirect_uri=%s", code, properties.redirect_uri);
+        var restTemplates = restTemplateBuilder
+                .basicAuthentication(properties.reddit_app_id, properties.reddit_app_password)
+                .build();
         var headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         headers.add(HttpHeaders.USER_AGENT, "server:com.github.artslob.drama:v0.0.1 (by /u/artslob-api-user)");
@@ -88,17 +83,9 @@ public class Start {
         var response = responseEntity.getBody();
         System.out.println(response);
         var token = new AccessToken(
-                response.access_token(),
-                response.token_type(),
-                response.expires_in(),
-                response.scope()
-        );
+                response.access_token(), response.token_type(), response.expires_in(), response.scope());
         accessTokenRepository.save(token);
-        var refreshToken = new RefreshToken(
-                response.refresh_token(),
-                response.token_type(),
-                response.scope()
-        );
+        var refreshToken = new RefreshToken(response.refresh_token(), response.token_type(), response.scope());
         refreshTokenRepository.save(refreshToken);
         {
             headers = new HttpHeaders();
@@ -106,12 +93,13 @@ public class Start {
             headers.add(HttpHeaders.USER_AGENT, "server:com.github.artslob.drama:v0.0.1 (by /u/artslob-api-user)");
             HttpEntity<String> userRequest = new HttpEntity<>(null, headers);
             restTemplates = restTemplateBuilder.build();
-            var userResponse = restTemplates.exchange(
-                    "https://oauth.reddit.com/api/v1/me",
-                    HttpMethod.GET,
-                    userRequest,
-                    UserIdentityResponse.class
-            ).getBody();
+            var userResponse = restTemplates
+                    .exchange(
+                            "https://oauth.reddit.com/api/v1/me",
+                            HttpMethod.GET,
+                            userRequest,
+                            UserIdentityResponse.class)
+                    .getBody();
             System.out.println(userResponse);
             var userEntity = new User();
             userEntity.setId(userResponse.id());

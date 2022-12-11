@@ -11,14 +11,14 @@ import lombok.NonNull;
 @Entity
 public class AccessToken {
     @Id
-    @GeneratedValue(strategy= GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
-    @NonNull
-    private String accessToken;
-    @NonNull
-    private String tokenType;
-    @NonNull
-    private int expiresIn;
-    @NonNull
-    private String scope;
+
+    @NonNull private String accessToken;
+
+    @NonNull private String tokenType;
+
+    @NonNull private int expiresIn;
+
+    @NonNull private String scope;
 }

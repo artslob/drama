@@ -18,6 +18,4 @@ public record UserIdentityResponse(
         int awardee_karma,
         int awarder_karma,
         int comment_karma,
-        boolean verified
-) {
-}
+        boolean verified) {}

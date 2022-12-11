@@ -11,12 +11,12 @@ import lombok.NonNull;
 @Entity
 public class RefreshToken {
     @Id
-    @GeneratedValue(strategy= GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
-    @NonNull
-    private String refreshToken;
-    @NonNull
-    private String tokenType;
-    @NonNull
-    private String scope;
+
+    @NonNull private String refreshToken;
+
+    @NonNull private String tokenType;
+
+    @NonNull private String scope;
 }
