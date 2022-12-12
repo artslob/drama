@@ -21,4 +21,11 @@ public class TestWithMockMvc {
     public void checkRoot() throws Exception {
         mockMvc.perform(get("/")).andExpect(status().isOk()).andExpect(content().string(containsString("client_id=")));
     }
+
+    //    @Test
+    //    public void checkCallback() throws Exception {
+    //        mockMvc.perform(get("/callback").queryParam("code", "qwe").queryParam("state", "qwe"))
+    //                .andExpect(status().isOk())
+    //                .andExpect(content().string(containsString("success")));
+    //    }
 }
