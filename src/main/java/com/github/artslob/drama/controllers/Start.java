@@ -42,7 +42,7 @@ public class Start {
         var state = "64990aeb-5178-43d3-8ccb-110962843622";
         var url = String.format(
                 """
-                https://www.reddit.com/api/v1/authorize?\
+                %s?\
                 client_id=%s\
                 &response_type=code\
                 &state=%s\
@@ -50,7 +50,7 @@ public class Start {
                 &duration=permanent\
                 &scope=%s\
                 """,
-                properties.reddit_app_id, state, properties.redirect_uri, scope);
+                properties.authorize_url, properties.reddit_app_id, state, properties.redirect_uri, scope);
         return String.format("<a href=\"%s\">go here</a>", url);
     }
 
@@ -68,7 +68,6 @@ public class Start {
         }
         System.out.println(code);
         System.out.println(state);
-        var url = "https://www.reddit.com/api/v1/access_token";
         var body =
                 String.format("grant_type=authorization_code&code=%s&redirect_uri=%s", code, properties.redirect_uri);
         var restTemplates = restTemplateBuilder
@@ -78,7 +77,7 @@ public class Start {
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         headers.add(HttpHeaders.USER_AGENT, "server:com.github.artslob.drama:v0.0.1 (by /u/artslob-api-user)");
         HttpEntity<String> entity = new HttpEntity<>(body, headers);
-        var responseEntity = restTemplates.postForEntity(url, entity, TokensResponse.class);
+        var responseEntity = restTemplates.postForEntity(properties.access_token_url, entity, TokensResponse.class);
         // TODO check for 200
         var response = responseEntity.getBody();
         System.out.println(response);
@@ -93,12 +92,9 @@ public class Start {
             headers.add(HttpHeaders.USER_AGENT, "server:com.github.artslob.drama:v0.0.1 (by /u/artslob-api-user)");
             HttpEntity<String> userRequest = new HttpEntity<>(null, headers);
             restTemplates = restTemplateBuilder.build();
+            var userApiUrl = String.format("%s/api/v1/me", properties.api_url);
             var userResponse = restTemplates
-                    .exchange(
-                            "https://oauth.reddit.com/api/v1/me",
-                            HttpMethod.GET,
-                            userRequest,
-                            UserIdentityResponse.class)
+                    .exchange(userApiUrl, HttpMethod.GET, userRequest, UserIdentityResponse.class)
                     .getBody();
             System.out.println(userResponse);
             var userEntity = new User();
