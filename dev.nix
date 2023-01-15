@@ -9,5 +9,6 @@ pkgs.mkShell {
     pkgs.htop
     pkgs.jdk
     pkgs.docker-compose
+    pkgs.nodejs # required for spotless:prettier
   ];
 }
