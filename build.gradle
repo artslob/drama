@@ -36,24 +36,24 @@ flyway {
     locations = ['filesystem:src/main/resources/db_migrations']
 }
 
-spotless {
-    format 'misc', {
-        // define the files to apply `misc` to
-        target '*.gradle', '*.md', '.gitignore'
-
-        // define the steps to apply to those files
-        trimTrailingWhitespace()
-        indentWithSpaces()
-        endWithNewline()
-    }
-    format 'yaml', {
-        target '**/*.yaml', '**/*.yml'
-        prettier('2.8.1')
-    }
-    java {
-        importOrder()
-        removeUnusedImports()
-        palantirJavaFormat('2.28.0')
-        formatAnnotations()  // fix formatting of type annotations
-    }
-}
+//spotless {
+//    format 'misc', {
+//        // define the files to apply `misc` to
+//        target '*.gradle', '*.md', '.gitignore'
+//
+//        // define the steps to apply to those files
+//        trimTrailingWhitespace()
+//        indentWithSpaces()
+//        endWithNewline()
+//    }
+//    format 'yaml', {
+//        target '**/*.yaml', '**/*.yml'
+//        prettier('2.8.1')
+//    }
+//    java {
+//        importOrder()
+//        removeUnusedImports()
+//        palantirJavaFormat('2.28.0')
+//        formatAnnotations()  // fix formatting of type annotations
+//    }
+//}
