@@ -4,3 +4,10 @@ repos:
     hooks:
       - id: gradle-spotless
         args: ["--wrapper", "--output"]
+  - repo: local
+    hooks:
+      - id: nixfmt
+        name: nixfmt
+        language: system
+        types: [nix]
+        entry: nixfmt
