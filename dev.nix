@@ -13,5 +13,6 @@ pkgs.mkShell {
     jdk
     docker-compose
     nodejs # required for spotless:prettier
+    cacert # needed for ci
   ];
 }
