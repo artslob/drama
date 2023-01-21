@@ -9,4 +9,4 @@ jobs:
       - uses: actions/checkout@v3
       - uses: cachix/install-nix-action@v17
       - run: nix-shell dev.nix --pure --run "./gradlew test"
-      - run: nix-shell dev.nix --pure --run "./gradlew spotlessCheck"
+      - run: nix-shell dev.nix --pure --run "pre-commit run -a"
